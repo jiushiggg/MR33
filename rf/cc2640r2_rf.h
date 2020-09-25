@@ -11,7 +11,6 @@
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/drivers/utils/list.h>
 #include "RFQueue.h"
-#include "datatype.h"
 #include "CC2592.h"
 
 typedef enum
@@ -89,8 +88,8 @@ extern rfc_dataEntryGeneral_t* currentDataEntry;
 extern uint8_t packetLength;
 extern uint8_t* packetDataPointer;
 extern RF_Status rf_status;
-extern UINT8 data0[PAYLOAD_LENGTH];
-extern UINT8 data1[PAYLOAD_LENGTH];
+extern uint8_t data0[PAYLOAD_LENGTH];
+extern uint8_t data1[PAYLOAD_LENGTH];
 extern int32_t frequency_offset;
 extern int8_t power_offset;
 extern uint16_t rf_tx_power[POWER_LEVEL];
@@ -113,11 +112,11 @@ extern void exit_txrx(void);
 extern void wait(uint32_t nus);
 extern void rf_preset_hb_recv(uint8_t b);
 extern uint8_t RF_readRegRSSI(void);
-extern UINT8 get_recPkgRSSI(void);
-extern uint16_t RF_recvDataForever(UINT8 *id, UINT8 len);
+extern uint8_t get_recPkgRSSI(void);
+extern uint16_t RF_recvDataForever(uint8_t *id, uint8_t len);
 
-extern uint16_t send_chaningmode(UINT8 *id, UINT8 *data, UINT8 len, UINT32 timeout);
-extern uint16_t send_flash_led_data(UINT8 *id0,UINT8 *data0, UINT8 *id1, UINT8* data1);
+extern uint16_t send_chaningmode(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout);
+extern uint16_t send_flash_led_data(uint8_t *id0,uint8_t *data0, uint8_t *id1, uint8_t* data1);
 extern void RF_wait_cmd_finish(void);
 
 
@@ -129,14 +128,14 @@ extern void RF_measureRSSI(Bool flg);
 extern void RF_setMeasureRSSI(uint8_t);
 extern List_Elem* listInit(void);
 
-extern int16_t set_rx_para(UINT8 *id, UINT16 datarate, UINT8 ch, UINT8 fifosize, UINT32 timeout);
-extern int8_t check_rx_status(UINT16 timeout);
-extern INT32 get_rx_data(UINT8 *dst, UINT8 dstsize);
+extern int16_t set_rx_para(uint8_t *id, uint16_t datarate, uint8_t ch, uint8_t fifosize, uint32_t timeout);
+extern int8_t check_rx_status(uint16_t timeout);
+extern int32_t get_rx_data(uint8_t *dst, uint8_t dstsize);
 extern void RF_calib_power(int8_t Tx_power);
 extern void RF_configPower(void);
 extern void send_chaningmode_init(void);
 extern void RF_senseTestFunction(void);
-extern uint8_t convertRSSI(INT8 n);
+extern uint8_t convertRSSI(int8_t n);
 
 
 

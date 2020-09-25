@@ -1,9 +1,8 @@
 #ifndef COMMON_CRC16_H_
 #define COMMON_CRC16_H_
+#include <stdint.h>
 
-#include "datatype.h"
-
-UINT16 Crc16_Cal(const UINT8* buf, UINT32 len);
-UINT16 CRC16_CaculateStepByStep(UINT16 crc, const UINT8* buf, UINT32 len);
+uint16_t Crc16_Cal(const uint8_t* buf, uint32_t len);
+uint16_t CRC16_CaculateStepByStep(uint16_t crc, const uint8_t* buf, uint32_t len);
 
 #endif

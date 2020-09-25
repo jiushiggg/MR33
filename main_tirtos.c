@@ -43,14 +43,40 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>
 
+#include <ti/drivers/Power.h>
+#include <ti/drivers/Power/PowerCC26XX.h>
+#include <ti/drivers/GPIO.h>
+
 /* Example/Board Header files */
 #include "Board.h"
+#include "thread_rf.h"
+#include "thread_trans.h"
 #include "cc2640r2_rf.h"
-#include "bsp.h"
 #include "timer.h"
+#include "memery.h"
 #include "event.h"
+#include "debug.h"
+#include "sys_cfg.h"
+#include "watchdog.h"
 
-extern void app_init(void);
+/* Stack size in bytes */
+#define GPRAM_BASE              0x11000000
+#define TASK0_STACKSIZE         (2048- 512)
+#define TASK0_ADDR              (GPRAM_BASE)
+
+#define TASK1_STACKSIZE         (2048- 512)
+#define TASK1_ADDR              (TASK0_ADDR+TASK0_STACKSIZE)
+
+void app_init(void);
+static void dongle_task_creat(void);
+
+#pragma location = (GPRAM_BASE);
+Char task0_Stack[TASK0_STACKSIZE];
+Task_Struct task0_Struct;
+
+#pragma location = (TASK1_ADDR);
+Char task1_Stack[TASK1_STACKSIZE];
+Task_Struct task1_Struct;
 
 /*
  *  ======== main ========
@@ -61,7 +87,6 @@ int main(void)
 //    Board_initWatchdog();
     rf_init();
     TIM_Init();
-    BSP_GPIO_init();
     Semaphore_RFInit();
     app_init();
     BIOS_start();    /* Start BIOS */
@@ -69,6 +94,52 @@ int main(void)
 
 }
 
+void app_init(void)
+{
+    Board_initSPI();
+    Board_initUART();
+    Board_initGPIO();
+    watchdog_init();
+
+#ifdef GPRAM_AS_RAM
+    // retain cache during standby
+    Power_setConstraint(PowerCC26XX_SB_VIMS_CACHE_RETAIN);
+    Power_setConstraint(PowerCC26XX_NEED_FLASH_IN_IDLE);
+#else
+    // Enable iCache pre-fetching
+    VIMSConfigure(VIMS_BASE, TRUE, TRUE);
+    // Enable cache
+    VIMSModeSet(VIMS_BASE, VIMS_MODE_ENABLED);
+#endif //CACHE_AS_RAM
+
+    Debug_SetLevel(DEBUG_LEVEL_INFO);
+    debug_peripheral_init();
+
+    //ap_heap_init();
+
+    //Event_init();
+    //Semphore_xmodemInit();
+
+    dongle_task_creat();
+}
 
 
+static void dongle_task_creat(void)
+{
+    Task_Params taskParams_0;
 
+    Task_Params_init(&taskParams_0);
+    taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
+    taskParams_0.stackSize = TASK0_STACKSIZE;
+    taskParams_0.stack = &task0_Stack;
+    taskParams_0.priority = 2;
+    Task_construct(&task0_Struct, (Task_FuncPtr)thread_transmit, &taskParams_0, NULL);
+
+
+    Task_Params_init(&taskParams_0);
+    taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
+    taskParams_0.stackSize = TASK1_STACKSIZE;
+    taskParams_0.stack = &task1_Stack;
+    taskParams_0.priority = 1;
+    Task_construct(&task1_Struct, (Task_FuncPtr)thread_rf, &taskParams_0, NULL);
+}

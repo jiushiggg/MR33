@@ -36,10 +36,10 @@ static const unsigned short crc16_query_tab[256]= {
  0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
 
-UINT16 Crc16_Cal(const UINT8* buf, UINT32 len)
+uint16_t Crc16_Cal(const uint8_t* buf, uint32_t len)
 {
-	UINT32 counter;
-	UINT16 crc = 0;
+	uint32_t counter;
+	uint16_t crc = 0;
 
 	for(counter = 0; counter < len; counter++)
 	{
@@ -49,9 +49,9 @@ UINT16 Crc16_Cal(const UINT8* buf, UINT32 len)
 	return crc;
 }
 
-UINT16 CRC16_CaculateStepByStep(UINT16 crc, const UINT8* buf, UINT32 len)
+uint16_t CRC16_CaculateStepByStep(uint16_t crc, const uint8_t* buf, uint32_t len)
 {
-	UINT32 counter;
+	uint32_t counter;
 
 	for(counter = 0; counter < len; counter++)
 	{

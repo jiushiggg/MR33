@@ -63,13 +63,13 @@ RF_Handle rfHandle;
 dataQueue_t dataQueue;
 RF_Status rf_status = RF_Status_idle;
 
-static UINT8 _hb_rssi = 0;
+static uint8_t _hb_rssi = 0;
 
 List_List list;
 MyStruct foo[2];
 List_Elem *write2buf;
-UINT8 data0[PAYLOAD_LENGTH] = {0};
-UINT8 data1[PAYLOAD_LENGTH] = {0};
+uint8_t data0[PAYLOAD_LENGTH] = {0};
+uint8_t data1[PAYLOAD_LENGTH] = {0};
 st_calib_value calib;
 
 List_Elem* listInit(void)
@@ -271,7 +271,7 @@ void set_power_rate(int8_t Tx_power, uint16_t Data_rate)
    RF_runCmd(rfHandle, (RF_Op*)&RF_cmdPropRadioSetup, RF_PriorityNormal, NULL, 0);
 }
 
-void send_data_init(UINT8 *id, UINT8 *data, UINT8 len, UINT32 timeout)
+void send_data_init(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout)
 {
     RF_cmdPropTxAdv[0].startTrigger.triggerType = TRIG_NOW;
     RF_cmdPropTxAdv[0].startTrigger.pastTrig = 1;
@@ -309,7 +309,7 @@ void send_chaningmode_init(void)
     RF_cmdPropTxAdv[1].pPkt = data1;
 }
 
-uint16_t send_chaningmode(UINT8 *id, UINT8 *data, UINT8 len, UINT32 timeout)
+uint16_t send_chaningmode(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout)
 {
     RF_EventMask result;
     cc2592Cfg(CC2592_TX);
@@ -339,7 +339,7 @@ uint16_t send_chaningmode(UINT8 *id, UINT8 *data, UINT8 len, UINT32 timeout)
                         (RF_EventCmdDone | RF_EventLastCmdDone| RF_EventCmdAborted));
     return (uint16_t)result;
 }
-uint16_t send_flash_led_data(UINT8 *id0,UINT8 *data0, UINT8 *id1, UINT8* data1)
+uint16_t send_flash_led_data(uint8_t *id0,uint8_t *data0, uint8_t *id1, uint8_t* data1)
 {
     RF_EventMask result;
     cc2592Cfg(CC2592_TX);
@@ -403,7 +403,7 @@ uint8_t send_data(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout)
     return len;
 }
 //timeout:us
-UINT8 recv_data(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout)
+uint8_t recv_data(uint8_t *id, uint8_t *data, uint8_t len, uint32_t timeout)
 {
     RF_CmdHandle rx_event;
 
@@ -433,7 +433,7 @@ void clear_queue_buf(void)
     }
 }
 
-RF_EventMask send_without_wait(UINT8 *id, UINT8 *data, UINT8 len, UINT8 ch, UINT32 timeout)
+RF_EventMask send_without_wait(uint8_t *id, uint8_t *data, uint8_t len, uint8_t ch, uint32_t timeout)
 {
     RF_EventMask result;
     set_frequence(ch);
@@ -508,7 +508,7 @@ void rf_preset_hb_recv(uint8_t b)
     }
 }
 
-uint16_t RF_recvDataForever(UINT8 *id, UINT8 len)
+uint16_t RF_recvDataForever(uint8_t *id, uint8_t len)
 {
     cc2592Cfg(CC2592_RX_HG_MODE);
 
@@ -529,7 +529,7 @@ uint16_t RF_recvDataForever(UINT8 *id, UINT8 len)
 #define RSSI_FACTOR     31    //(105, 170),(55, 15) => (rssi-15)/(dBm-55) = (170-15)/(105-55) =>rssi = 3.1*dBm-155.5
 #define RSSI_CONSTANT   1555
 
-uint8_t convertRSSI(INT8 n)
+uint8_t convertRSSI(int8_t n)
 {
     uint16_t tmp_rssi = (~n + 1);
     if (tmp_rssi < 50) {
@@ -598,7 +598,7 @@ void RF_setMeasureRSSI(uint8_t b)
 }
 
 
-int16_t set_rx_para(UINT8 *id, UINT16 datarate, UINT8 ch, UINT8 fifosize, UINT32 timeout)
+int16_t set_rx_para(uint8_t *id, uint16_t datarate, uint8_t ch, uint8_t fifosize, uint32_t timeout)
 {
     timeout *= 1000000;
     cc2592Cfg(CC2592_RX_HG_MODE);
@@ -607,7 +607,7 @@ int16_t set_rx_para(UINT8 *id, UINT16 datarate, UINT8 ch, UINT8 fifosize, UINT32
     return Rf_rx_package(rfHandle, &dataQueue, id, fifosize, TRUE , timeout/Clock_tickPeriod);
 }
 
-int8_t check_rx_status(UINT16 timeout) //unit ms
+int8_t check_rx_status(uint16_t timeout) //unit ms
 {
     timeout = timeout * 1000;
 
@@ -617,7 +617,7 @@ int8_t check_rx_status(UINT16 timeout) //unit ms
         return 1;
     }
 }
-INT32 get_rx_data(UINT8 *dst, UINT8 dstsize)
+int32_t get_rx_data(uint8_t *dst, uint8_t dstsize)
 {
     currentDataEntry = RFQueue_getDataEntry();
     memcpy(dst, (uint8_t*)(&currentDataEntry->data), dstsize+2);
@@ -644,7 +644,7 @@ void sense_test_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
         RFQueue_nextEntry();
     }
 }
-
+#if 0
 void RF_senseTestFunction(void)
 {
 	uint8_t buff1[1]={0};
@@ -711,6 +711,7 @@ void RF_senseTestFunction(void)
 #endif
     while(1);
 }
+#endif
 static void RF_MapIO(void)
 {
     HWREG(RFC_DBELL_BASE + RFC_DBELL_O_SYSGPOCTL) = RFC_DBELL_SYSGPOCTL_GPOCTL0_CPEGPO0 |RFC_DBELL_SYSGPOCTL_GPOCTL1_RATGPO0 | RFC_DBELL_SYSGPOCTL_GPOCTL2_MCEGPO1 | RFC_DBELL_SYSGPOCTL_GPOCTL3_RATGPO1;
@@ -720,16 +721,3 @@ static void RF_MapIO(void)
     IOCIOPortIdSet(RF_RX_TEST_IO,      IOC_PORT_RFC_GPO0);
 }
 
-#if 0
-#define RX_LEN  26
-uint8_t mylen =0, mybuf[RX_LEN] = {0};
-while(1){
-    uint8_t myid[4]={0x52,0x56,0x78,0x53};
-
-    set_power_rate(RF_DEFAULT_POWER, DATA_RATE_100K);
-    mylen = recv_data(myid, mybuf, RX_LEN, 2, 1000000);
-    if (mylen == 0){
-        pinfo("core recv data to flash start.\r\n");
-    }
-}
-#endif

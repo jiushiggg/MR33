@@ -96,10 +96,10 @@ extern const PIN_Config BoardGpioInitTable[];
 #endif
 
 /* SPI Board */
-#define CC2640R2_LAUNCHXL_SPI0_MISO             IOID_26          /* RF1.20 */
-#define CC2640R2_LAUNCHXL_SPI0_MOSI             IOID_24          /* RF1.18 */
-#define CC2640R2_LAUNCHXL_SPI0_CLK              IOID_25         /* RF1.16 */
-#define CC2640R2_LAUNCHXL_SPI0_CSN              PIN_UNASSIGNED
+#define CC2640R2_LAUNCHXL_SPI0_MISO             IOID_19          /* RF1.20 */
+#define CC2640R2_LAUNCHXL_SPI0_MOSI             IOID_17          /* RF1.18 */
+#define CC2640R2_LAUNCHXL_SPI0_CLK              IOID_18         /* RF1.16 */
+#define CC2640R2_LAUNCHXL_SPI0_CSN              IOID_16
 
 /* UART Board */
 //#define BOARD2

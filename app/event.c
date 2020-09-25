@@ -95,7 +95,7 @@ void Event_init(void)
     protocol_eventHandle = Event_handle(&protocol_eventStruct);
 }
 
-UINT32 Event_Get(void)
+uint32_t Event_Get(void)
 {
     return Event_getPostedEvents(protocol_eventHandle);
 }

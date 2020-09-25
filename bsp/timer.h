@@ -1,7 +1,6 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
-
-#include "datatype.h"
+#include <stdint.h>
 
 
 #define    TIMER_UP_CNT   0
@@ -30,13 +29,13 @@ typedef enum{
 typedef void (*TIM_ISRHandle)(uint8_t n);
 
 extern void TIM_Init(void);
-extern UINT8 TIM_Open(UINT32 nms, UINT16 cnt, UINT16 direction, emTimerMode mode);
-extern void TIM_Close(UINT8 t);
-extern UINT8 TIM_CheckTimeout(UINT8 t);
-extern INT32 TIM_GetCount(UINT8 t);
-extern void TIM_SetSoftTimeout(UINT8 t);
-extern UINT8   getTimerNum(void);
-extern UINT32 TIM_GetTicks(void);
+extern uint8_t TIM_Open(uint32_t nms, uint16_t cnt, uint16_t direction, emTimerMode mode);
+extern void TIM_Close(uint8_t t);
+extern uint8_t TIM_CheckTimeout(uint8_t t);
+extern int32_t TIM_GetCount(uint8_t t);
+extern void TIM_SetSoftTimeout(uint8_t t);
+extern uint8_t   getTimerNum(void);
+extern uint32_t TIM_GetTicks(void);
 extern void TIM_SetCallback(uint8_t n, TIM_ISRHandle p_fnx);
 #endif
 

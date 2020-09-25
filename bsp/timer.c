@@ -1,8 +1,6 @@
-#include <ti/drivers/timer/GPTimerCC26XX.h>
 #include <ti/sysbios/knl/Clock.h>
 #include <ti/sysbios/BIOS.h>
 #include "CC2640R2_LAUNCHXL.h"
-#include "bsp.h"
 #include "event.h"
 #include "timer.h"
 #include "debug.h"
@@ -18,8 +16,8 @@ typedef struct
 {
     Clock_Handle TIMn;
     TIM_ISRHandle fnx;
-    volatile INT32 count;
-    volatile INT32 direction;
+    volatile int32_t count;
+    volatile int32_t direction;
     volatile emTimeCheck timeout;
     volatile emTimerStatus inuse;
     volatile emTimerSn sn;
@@ -28,7 +26,7 @@ typedef struct
 #define TIRTOS_1MS  (1000/Clock_tickPeriod)
 
 static void ISR_Handle(uint8_t n);
-Clock_Handle get_real_timer(UINT8 t);
+Clock_Handle get_real_timer(uint8_t t);
 void SWI_timerCallback0(xdc_UArg n);
 
 Clock_Struct clk0Struct;
@@ -41,11 +39,11 @@ volatile timer_t ts[] = {   //todo
 //	{NULL, NULL, 0, 0},
 };
 
-static UINT8 get_a_free_timer(void)
+static uint8_t get_a_free_timer(void)
 {
-    INT8 i;
+    int8_t i;
     emTimerSn t = TIMER_UNKNOW;
-    UINT8 timer_num = sizeof(ts)/sizeof(timer_t);
+    uint8_t timer_num = sizeof(ts)/sizeof(timer_t);
 
     for(i = 0; i < timer_num; i++)
     {
@@ -58,7 +56,7 @@ static UINT8 get_a_free_timer(void)
 
     return t;
 }
-Clock_Handle get_real_timer(UINT8 t)
+Clock_Handle get_real_timer(uint8_t t)
 {
     if(t <= (sizeof(ts)/sizeof(timer_t)))
     {
@@ -70,12 +68,12 @@ Clock_Handle get_real_timer(UINT8 t)
     }
 }
 
-UINT8   getTimerNum(void)
+uint8_t   getTimerNum(void)
 {
     return sizeof(ts)/sizeof(timer_t);
 }
 
-INT32 TIM_GetCount(UINT8 t)
+int32_t TIM_GetCount(uint8_t t)
 {
     if(t <= (sizeof(ts)/sizeof(timer_t)))
     {
@@ -87,7 +85,7 @@ INT32 TIM_GetCount(UINT8 t)
     }
 }
 
-UINT32 TIM_GetTicks(void)
+uint32_t TIM_GetTicks(void)
 {
     uint32_t tmpticks = Clock_getTicks();
 
@@ -117,7 +115,7 @@ void TIM_Init(void)
 }
 
 
-UINT8 TIM_Open(UINT32 nms, UINT16 cnt, UINT16 direction, emTimerMode mode)
+uint8_t TIM_Open(uint32_t nms, uint16_t cnt, uint16_t direction, emTimerMode mode)
 {
     uint32_t key;
     uint8_t t = 0;
@@ -193,7 +191,7 @@ void TIM_Close(uint8_t t)
 }
 
 
-UINT8 TIM_CheckTimeout(UINT8 t)
+uint8_t TIM_CheckTimeout(uint8_t t)
 {
 	if(get_real_timer(t) != NULL)
 	{

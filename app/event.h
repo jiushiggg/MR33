@@ -1,7 +1,6 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include "datatype.h"
 #include <ti/sysbios/knl/Clock.h>
 
 #define EVENT_NONE				0
