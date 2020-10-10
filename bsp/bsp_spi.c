@@ -11,10 +11,9 @@
 
 
 #define SPI_RATE    4000000
-#define SPI_BUF_LEN 64
 
 
-static SPI_Transaction transaction;
+
 static SPI_Handle handle;
 
 void SPI_bsp_init(uint8_t* rxbuf, uint8_t* txbuf)
@@ -28,31 +27,22 @@ void SPI_bsp_init(uint8_t* rxbuf, uint8_t* txbuf)
     params.mode                = SPI_MASTER;
     params.transferMode        = SPI_MODE_BLOCKING;
     params.transferCallbackFxn = NULL;
-    // Configure the transaction
-    transaction.count = SPI_BUF_LEN;
-    transaction.txBuf = txbuf;
-    transaction.rxBuf = rxbuf;
     // Open the SPI and initiate the first transfer
     handle = SPI_open(Board_SPI0, &params);
 }
 
-uint8_t SPI_check_status(void)
-{
-    return transaction.status==SPI_TRANSFER_STARTED;
-}
 
 
 bool SPI_bsp_send(void *buffer, uint16_t size)
 {
     bool ret = false;
-    if (SPI_check_status()){
-        return ret;
-    }
+    SPI_Transaction transaction;
 
-    if (size > SPI_BUF_LEN){
+    if (size > LOG_SIZE){
         return ret;
     }
     transaction.txBuf = buffer;
+    transaction.rxBuf = NULL;
     transaction.count = size;
     ret = SPI_transfer(handle, &transaction);
     if (false==ret){

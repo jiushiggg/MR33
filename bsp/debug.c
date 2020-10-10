@@ -9,10 +9,10 @@
 
 volatile uint32_t s_debug_level = DEBUG_LEVEL_DFAULT;
 
-#define LOG_SIZE    64
+
 
 unsigned char debug_buf[LOG_SIZE];
-int (*debugWrite)(void  *buf, uint16_t len) ;
+bool (*debugWrite)(void  *buf, uint16_t len) ;
 
 
 void debug_peripheral_init(void)
@@ -58,6 +58,9 @@ void pdebug(const char *format, ...)
         va_end(ap);
 
         len = strlen((char *)debug_buf);
+        if (len >= LOG_SIZE){
+            debug_buf[LOG_SIZE-1] = '\0';
+        }
         debugWrite(ptr,LOG_SIZE);
     }
 }
@@ -76,6 +79,9 @@ void pinfo(const char *format, ...)
         va_end(ap);
 
         len = strlen((char *)debug_buf);
+        if (len >= LOG_SIZE){
+            debug_buf[LOG_SIZE-1] = '\0';
+        }
         debugWrite(ptr,LOG_SIZE);
     }
 
@@ -96,5 +102,9 @@ void log_print(const char *fmt, ...)
     va_end(ap);
 
     len = strlen((char *)debug_buf);
+    if (len >= LOG_SIZE){
+        debug_buf[LOG_SIZE-1] = '\0';
+    }
+
     debugWrite(ptr,LOG_SIZE);
 }

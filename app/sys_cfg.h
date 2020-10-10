@@ -3,7 +3,7 @@
 #include "debug.h"
 
 
-#define COREMEM_SIZE    (1024*8)
+#define COREMEM_SIZE    (1024)
 
 
 //debug info output peripheral

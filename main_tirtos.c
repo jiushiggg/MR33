@@ -61,10 +61,10 @@
 
 /* Stack size in bytes */
 #define GPRAM_BASE              0x11000000
-#define TASK0_STACKSIZE         (2048- 512)
+#define TASK0_STACKSIZE         (1024)
 #define TASK0_ADDR              (GPRAM_BASE)
 
-#define TASK1_STACKSIZE         (2048- 512)
+#define TASK1_STACKSIZE         (1024)
 #define TASK1_ADDR              (TASK0_ADDR+TASK0_STACKSIZE)
 
 void app_init(void);
@@ -114,11 +114,9 @@ void app_init(void)
 
     Debug_SetLevel(DEBUG_LEVEL_INFO);
     debug_peripheral_init();
-
-    //ap_heap_init();
-
+    bsp_uart_init(sizeof(uart_head_st));
+    ap_heap_init();
     //Event_init();
-    //Semphore_xmodemInit();
 
     dongle_task_creat();
 }
@@ -132,7 +130,7 @@ static void dongle_task_creat(void)
     taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
     taskParams_0.stackSize = TASK0_STACKSIZE;
     taskParams_0.stack = &task0_Stack;
-    taskParams_0.priority = 2;
+    taskParams_0.priority = 2;          //first run
     Task_construct(&task0_Struct, (Task_FuncPtr)thread_transmit, &taskParams_0, NULL);
 
 
@@ -140,6 +138,6 @@ static void dongle_task_creat(void)
     taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
     taskParams_0.stackSize = TASK1_STACKSIZE;
     taskParams_0.stack = &task1_Stack;
-    taskParams_0.priority = 1;
+    taskParams_0.priority = 1;          //second run
     Task_construct(&task1_Struct, (Task_FuncPtr)thread_rf, &taskParams_0, NULL);
 }

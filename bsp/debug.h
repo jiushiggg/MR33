@@ -10,7 +10,7 @@
 #define	DEBUG_LEVEL_DEBUG		3
 
 #define DEBUG_LEVEL_DFAULT		DEBUG_LEVEL_DEBUG
-
+#define LOG_SIZE    64
 
 typedef enum{
     DEBUG_SPI = (uint8_t)0,
@@ -31,6 +31,6 @@ void debug_peripheral_init(void);
 void log_print(const char *fmt, ...);
 void pinfoEsl(const char *format, ...);
 
-#define TRACE()   pinfo("dongle: %s", __FUNCTION__)
+#define TRACE()   pinfo("trace: %s", __FUNCTION__)
 
 #endif
