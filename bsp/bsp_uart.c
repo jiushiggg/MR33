@@ -15,7 +15,7 @@ UART_Handle uart_handle;
 extern UART_Callback uart_read_callback;
 extern UART_Callback uart_write_callback;
 
-void bsp_uart_init(uint16_t len)
+void bsp_uart_init(void)
 {
     UART_Params uartParams;
 
@@ -25,9 +25,9 @@ void bsp_uart_init(uint16_t len)
     uartParams.readDataMode     = UART_DATA_BINARY;
     uartParams.readReturnMode   = UART_RETURN_FULL;
     uartParams.readMode         = UART_MODE_CALLBACK;
-    uartParams.writeMode         = UART_MODE_CALLBACK;
+    uartParams.writeMode        = UART_MODE_CALLBACK;
     uartParams.readCallback     = uart_read_callback;
-    uartParams.writeCallback     = uart_write_callback;
+    uartParams.writeCallback    = uart_write_callback;
     uartParams.readEcho         = UART_ECHO_OFF;
     uartParams.baudRate         = 115200;
 

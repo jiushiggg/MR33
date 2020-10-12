@@ -114,7 +114,7 @@ void app_init(void)
 
     Debug_SetLevel(DEBUG_LEVEL_INFO);
     debug_peripheral_init();
-    bsp_uart_init(sizeof(uart_head_st));
+    bsp_uart_init(void);
     ap_heap_init();
     //Event_init();
 

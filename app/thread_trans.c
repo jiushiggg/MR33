@@ -98,6 +98,7 @@ void *thread_transmit(UArg arg)
     TRACE();
     thread_transmit_init();
     semaphore_uart_init();
+    bsp_uart_read(uart_rxbuf, sizeof(uart_head_st));
     while(1){
         if(true != Mailbox_pend(trans_mbox, &msg, /*BIOS_WAIT_FOREVER*/THREAD_SPI_PEND_TIME)) {
             //todo: if uart ok feed watchdog
@@ -334,6 +335,7 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
             recv_status = RECV_DATA;
             if (0 == ((uart_head_st*)rxBuf)->len){
                 recv_status = RECV_HEAD;
+                //todo: post message to thread_transmit()
             }else {
                 recv_status = RECV_DATA;
             }
@@ -347,20 +349,10 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
             recv_status = RECV_HEAD;
         }
     } else {
-        if (RECV_HEAD == recv_status) {
-            recv_status = RECV_HEAD;
-            //todo: post err message to thread_transmit()
-        } else if (RECV_DATA == recv_status) {
-            if (size == ((uart_head_st*)uart_rxbuf)->len){
-                //todo: post message to thread_transmit()
-            } else {
-                //todo: post err message to thread_transmit()
-            }
-            recv_status = RECV_HEAD;
-        } else {
-            recv_status = RECV_HEAD;
-            //todo: post err message to thread_transmit()
+        if (RECV_DATA == recv_status) {
+            //todo: post message to thread_transmit()
         }
+        recv_status = RECV_HEAD;
         UART_control(handle, UARTCC26XX_CMD_RX_FIFO_FLUSH, NULL);
         UART_read(handle, uart_rxbuf, sizeof(uart_head_st));
     }
