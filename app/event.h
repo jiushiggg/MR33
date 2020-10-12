@@ -51,9 +51,9 @@ extern uint32_t Event_GetStatus(void);
 extern uint32_t Event_PendCore(uint32_t event);
 
 
-extern void Semaphore_xmodemInit(void);
-extern Bool Device_Recv_pend(uint32_t timeout);
-extern void Device_Recv_post(void);
+extern void semaphore_uart_init(void);
+extern Bool uart_write_pend(uint32_t timeout);
+extern void uart_write_post(void);
 extern uint32_t taskDisable(void);
 extern void taskEnable(uint32_t key);
 extern uint32_t swiDisable(void);

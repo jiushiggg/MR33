@@ -11,29 +11,29 @@
 Event_Handle protocol_eventHandle;
 Event_Struct protocol_eventStruct;
 
-Semaphore_Struct  recSemStruct;
-Semaphore_Handle  recSemHandle;
+static Semaphore_Struct  uart_sem_struct;
+static Semaphore_Handle  uart_sem_handle;
 
 Semaphore_Struct  RF_rxSemStruct;
 Semaphore_Handle  RF_rxSemHandle;
 Semaphore_Struct  RF_txSemStruct;
 Semaphore_Handle  RF_txSemHandle;
 
-void Semaphore_xmodemInit(void)
+void semaphore_uart_init(void)
 {
     Semaphore_Params  recSemParam;
     Semaphore_Params_init(&recSemParam);
-    recSemParam.mode = ti_sysbios_knl_Semaphore_Mode_BINARY;
-    Semaphore_construct(&recSemStruct, 0, &recSemParam);
-    recSemHandle = Semaphore_handle(&recSemStruct);
+    recSemParam.mode = ti_sysbios_knl_Semaphore_Mode_COUNTING;
+    Semaphore_construct(&uart_sem_struct, 0, &recSemParam);
+    uart_sem_handle = Semaphore_handle(&uart_sem_struct);
 }
-Bool Device_Recv_pend(uint32_t timeout)
+Bool uart_write_pend(uint32_t timeout)
 {
-    return Semaphore_pend(recSemHandle, timeout);
+    return Semaphore_pend(uart_sem_handle, timeout);
 }
-void Device_Recv_post(void)
+void uart_write_post(void)
 {
-    Semaphore_post(recSemHandle);
+    Semaphore_post(uart_sem_handle);
 }
 
 void Semaphore_RFInit(void)

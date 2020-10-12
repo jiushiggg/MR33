@@ -40,8 +40,6 @@ extern List_Elem *write2buf;
 extern st_calib_value calib;
 
 
-#define TRUE  1
-#define FALSE 0
 
 #define RF_RX_TIMEOUT     2
 #define RF_RX_DONE        3

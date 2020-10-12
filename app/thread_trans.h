@@ -29,9 +29,15 @@ typedef struct _uart_head_st{
     uint8_t data[0];
 }uart_head_st;
 
+typedef enum _msg_type{
+    MSG_UPLINK = 1,
+    MSG_UART_CB = 1,
+    MSG_TRANS_ACK,
+    MSG_ERR
+}msg_type;
 
 typedef  struct _uart_tsk_msg_t{
-    uint16_t type;
+    msg_type type;
     uint16_t id;
     uint32_t len;
     uint8_t* buf;

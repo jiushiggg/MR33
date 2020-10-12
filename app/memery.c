@@ -89,6 +89,9 @@ void* ap_malloc(uint32_t size)
 
 void ap_free(void* ptr, uint32_t size)
 {
+    if (NULL == ptr){
+        return;
+    }
     Memory_free(ap_heap, ptr, size);
     printHeapStats(ap_heap);
 }
