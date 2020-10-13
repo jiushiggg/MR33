@@ -12,8 +12,8 @@
 
 
 UART_Handle uart_handle;
-extern UART_Callback uart_read_callback;
-extern UART_Callback uart_write_callback;
+extern void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size);
+extern void uart_write_callback(UART_Handle handle, void *rxBuf, size_t size);
 
 void bsp_uart_init(void)
 {
