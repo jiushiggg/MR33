@@ -59,9 +59,10 @@ static void trans_downlink_handle(uart_tsk_msg_t* msg);
 static void trans_uplink_handle(uart_tsk_msg_t* msg);
 
 #define UART_BUF_NUM    2
+#define APP_BUF_NUM     2
 List_List trans_list;
-trans_struct trans_buf[UART_BUF_NUM];
-uint8_t buffer[UART_BUF_NUM][BUFFER_LEN];
+trans_struct trans_buf[APP_BUF_NUM];
+uint8_t buffer[APP_BUF_NUM][BUFFER_LEN];
 
 Mailbox_Handle trans_mbox;
 extern Mailbox_Handle rf_mbox;
@@ -70,35 +71,22 @@ extern Mailbox_Handle rf_mbox;
 #define UART_MAX_LEN   (uint16_t)512
 #define UART_BUF_LEN    (UART_HEAD+UART_MAX_LEN)
 
-uint8_t uart_rxbuf[UART_BUF_LEN];               // Receive  buffer
+uint8_t uart_rxbuf[UART_BUF_NUM][UART_BUF_LEN];               // Receive  buffer
 const uint8_t uart_sync[4] = {0xf0, 0xf0, 0xf0, 0xf0};
 int16_t rf_ch;
 
 void *thread_transmit(UArg arg)
 {
-//    uint16_t i, n=0;
-//    while(1)
-//    {
-////        memset(txbuf, 0, sizeof(txbuf));
-////        n = rand()%BUF_LEN;
-////        if (n==0){
-////            n++;
-////        }
-////        for (i=0; i<n; i++){
-////            txbuf[i] = '0'+i;
-////        }
-//
-//        //SPI_bsp_send(txbuf, BUF_LEN);
-//        //Task_sleep(1000/10);
-//        pinfo("dongle: %s", __FUNCTION__);
-//        Task_sleep(3000000/10);
-//    }
-
     uart_tsk_msg_t msg;
     TRACE();
     thread_transmit_init();
+    bsp_uart_init();
     semaphore_uart_init();
-    bsp_uart_read(uart_rxbuf, sizeof(uart_head_st));
+    //bsp_uart_read(uart_rxbuf[0], sizeof(uart_head_st));
+    while(1){
+        bsp_uart_write("test", 5);
+        Task_sleep(100000);
+    }
     while(1){
         if(true != Mailbox_pend(trans_mbox, &msg, /*BIOS_WAIT_FOREVER*/THREAD_SPI_PEND_TIME)) {
             //todo: if uart ok feed watchdog
@@ -183,12 +171,12 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 head_addr = ap_malloc(sizeof(uart_head_st));
                 tx_head_addr = ap_malloc(sizeof(uart_head_st));
 
-                for(i=0; i<UART_BUF_NUM; i++){
+                for(i=0; i<APP_BUF_NUM; i++){
                     if (TRANS_BUF_IDLE == trans_buf[i].buf_status){
                         break;
                     }
                 }
-                if (i == UART_BUF_NUM){
+                if (i == APP_BUF_NUM){
                     data_addr = ap_malloc(UART_MAX_LEN);
                 }else {
                     trans_buf[i].buf_status = TRANS_BUF_USING;
@@ -233,7 +221,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     d_status = DOWNLINK_PACKAGE;
                     break;
                 }
-                if (UART_BUF_NUM == i){
+                if (APP_BUF_NUM == i){
                     //todo: if return no buffer, need a event, check buffer, then send message to elinker
                     d_status = DOWNLINK_PACKAGE;
                     break;
@@ -252,7 +240,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 tx_head_addr->tx_sn++;
                 tx_head_addr->rx_sn = head_addr->tx_sn;
                 tx_head_addr->ctrl |= CTRL_ACK;
-                if (UART_BUF_NUM == i){
+                if (APP_BUF_NUM == i){
                     tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_MAX_LEN;
                 } else {
                     tx_head_addr->win = 0;
@@ -327,6 +315,7 @@ static void thread_transmit_init(void)
 
 static recv_em recv_status = RECV_HEAD;
 static uint16_t wantedbytes = sizeof(uart_head_st);
+static uint8_t uart_buf_idx = 0;
 void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
 {
     UARTCC26XX_Object *object =  handle->object;
@@ -339,11 +328,10 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
 
                 uart_tsk_msg_t msg = {
                     .type = MSG_UART_CB,
-                    .id  = ((uart_head_st*)rxBuf)->id,
-                    .len = ((uart_head_st*)rxBuf)->len,
-                    .buf = uart_rxbuf
+                    .buf = uart_rxbuf[uart_buf_idx]
                 };
                 Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+                uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
             }else if (size == sizeof(uart_head_st)){
                 recv_status = RECV_DATA;
                 wantedbytes = ((uart_head_st*)rxBuf)->len > UART_MAX_LEN ? UART_MAX_LEN : ((uart_head_st*)rxBuf)->len;
@@ -352,31 +340,33 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
                 wantedbytes = sizeof(uart_head_st);
             }
 
-            UART_read(handle, uart_rxbuf+sizeof(uart_head_st), wantedbytes);
+            UART_read(handle, uart_rxbuf[uart_buf_idx]+sizeof(uart_head_st), wantedbytes);
         } else if (RECV_DATA==recv_status && wantedbytes == size) {
-            UART_read(handle, uart_rxbuf, sizeof(uart_head_st));
             recv_status = RECV_HEAD;
 
             uart_tsk_msg_t msg = {
                 .type = MSG_UART_CB,
-                .buf = uart_rxbuf
+                .buf = uart_rxbuf[uart_buf_idx]
             };
             Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
+            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
         } else {
-            UART_read(handle, uart_rxbuf, sizeof(uart_head_st));
+            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
             recv_status = RECV_HEAD;
         }
     } else {
         if (RECV_DATA==recv_status && wantedbytes == size) {
             uart_tsk_msg_t msg = {
                 .type = MSG_UART_CB,
-                .buf = uart_rxbuf
+                .buf = uart_rxbuf[uart_buf_idx]
             };
             Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
         }
         recv_status = RECV_HEAD;
         UART_control(handle, UARTCC26XX_CMD_RX_FIFO_FLUSH, NULL);
-        UART_read(handle, uart_rxbuf, sizeof(uart_head_st));
+        UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
     }
 }
 
