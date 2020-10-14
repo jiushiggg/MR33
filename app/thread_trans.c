@@ -75,6 +75,67 @@ uint8_t uart_rxbuf[UART_BUF_NUM][UART_BUF_LEN];               // Receive  buffer
 const uint8_t uart_sync[4] = {0xf0, 0xf0, 0xf0, 0xf0};
 int16_t rf_ch;
 
+static recv_em recv_status = RECV_HEAD;
+static uint16_t wantedbytes = sizeof(uart_head_st);
+static uint8_t uart_buf_idx = 0;
+//todo: add a timer to control read time.
+void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
+{
+    UARTCC26XX_Object *object =  handle->object;
+
+    if (UART_OK == object->status) {
+        if (RECV_HEAD == recv_status) {
+            if (size==sizeof(uart_head_st) && 0==((uart_head_st*)rxBuf)->len){
+                recv_status = RECV_HEAD;
+                wantedbytes = sizeof(uart_head_st);
+
+                uart_tsk_msg_t msg = {
+                    .type = MSG_UART_CB,
+                    .buf = uart_rxbuf[uart_buf_idx]
+                };
+                Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+
+                uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
+                UART_read(handle, uart_rxbuf[uart_buf_idx], wantedbytes);
+            }else if (size == sizeof(uart_head_st)){
+                recv_status = RECV_DATA;
+                wantedbytes = ((uart_head_st*)rxBuf)->len > UART_DATA_LEN ? UART_DATA_LEN : ((uart_head_st*)rxBuf)->len;
+                UART_read(handle, uart_rxbuf[uart_buf_idx]+sizeof(uart_head_st), wantedbytes);
+            }else {
+                recv_status = RECV_HEAD;
+                wantedbytes = sizeof(uart_head_st);
+                UART_read(handle, uart_rxbuf[uart_buf_idx], wantedbytes);
+            }
+        } else if (RECV_DATA==recv_status && wantedbytes == size) {
+            recv_status = RECV_HEAD;
+
+            uart_tsk_msg_t msg = {
+                .type = MSG_UART_CB,
+                .buf = uart_rxbuf[uart_buf_idx]
+            };
+            Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+
+            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
+            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
+        } else {
+            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
+            recv_status = RECV_HEAD;
+        }
+    } else {
+        if (RECV_DATA==recv_status && wantedbytes == size) {
+            uart_tsk_msg_t msg = {
+                .type = MSG_UART_CB,
+                .buf = uart_rxbuf[uart_buf_idx]
+            };
+            Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
+            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
+        }
+        recv_status = RECV_HEAD;
+        UART_control(handle, UARTCC26XX_CMD_RX_FIFO_FLUSH, NULL);
+        UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
+    }
+}
+
 void *thread_transmit(UArg arg)
 {
     uart_tsk_msg_t msg;
@@ -88,6 +149,7 @@ void *thread_transmit(UArg arg)
             //todo: if uart ok feed watchdog
             continue;
         }
+        pinfo("msg=%x", msg.buf);
         if (MSG_UART_CB == msg.type) {
             uart_head_st* head  = (uart_head_st*)msg.buf;
             switch(head->ctrl){
@@ -312,63 +374,6 @@ static void thread_transmit_init(void)
     trans_list_init();
 }
 
-static recv_em recv_status = RECV_HEAD;
-static uint16_t wantedbytes = sizeof(uart_head_st);
-static uint8_t uart_buf_idx = 0;
-//todo: add a timer to control read time.
-void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
-{
-    UARTCC26XX_Object *object =  handle->object;
-
-    if (UART_OK == object->status) {
-        if (RECV_HEAD == recv_status) {
-            if (size==sizeof(uart_head_st) && 0==((uart_head_st*)rxBuf)->len){
-                recv_status = RECV_HEAD;
-                wantedbytes = sizeof(uart_head_st);
-
-                uart_tsk_msg_t msg = {
-                    .type = MSG_UART_CB,
-                    .buf = uart_rxbuf[uart_buf_idx]
-                };
-                Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
-                uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
-            }else if (size == sizeof(uart_head_st)){
-                recv_status = RECV_DATA;
-                wantedbytes = ((uart_head_st*)rxBuf)->len > UART_DATA_LEN ? UART_DATA_LEN : ((uart_head_st*)rxBuf)->len;
-            }else {
-                recv_status = RECV_HEAD;
-                wantedbytes = sizeof(uart_head_st);
-            }
-
-            UART_read(handle, uart_rxbuf[uart_buf_idx]+sizeof(uart_head_st), wantedbytes);
-        } else if (RECV_DATA==recv_status && wantedbytes == size) {
-            recv_status = RECV_HEAD;
-
-            uart_tsk_msg_t msg = {
-                .type = MSG_UART_CB,
-                .buf = uart_rxbuf[uart_buf_idx]
-            };
-            Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
-            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
-            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
-        } else {
-            UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
-            recv_status = RECV_HEAD;
-        }
-    } else {
-        if (RECV_DATA==recv_status && wantedbytes == size) {
-            uart_tsk_msg_t msg = {
-                .type = MSG_UART_CB,
-                .buf = uart_rxbuf[uart_buf_idx]
-            };
-            Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT);
-            uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
-        }
-        recv_status = RECV_HEAD;
-        UART_control(handle, UARTCC26XX_CMD_RX_FIFO_FLUSH, NULL);
-        UART_read(handle, uart_rxbuf[uart_buf_idx], sizeof(uart_head_st));
-    }
-}
 
 
 void uart_write_callback(UART_Handle handle, void *rxBuf, size_t size)
