@@ -30,7 +30,7 @@
 
 #define ABORT_ID    0x1000
 
-#define THREAD_SPI_PEND_TIME (5000*1000/Clock_tickPeriod)
+#define THREAD_SPI_PEND_TIME (30000*1000/Clock_tickPeriod)
 #define BUFFER_LEN      4096
 
 typedef enum _recv_em{
@@ -68,8 +68,8 @@ Mailbox_Handle trans_mbox;
 extern Mailbox_Handle rf_mbox;
 
 #define UART_HEAD   (uint16_t)24
-#define UART_MAX_LEN   (uint16_t)512
-#define UART_BUF_LEN    (UART_HEAD+UART_MAX_LEN)
+#define UART_DATA_LEN   (uint16_t)512
+#define UART_BUF_LEN    (UART_HEAD+UART_DATA_LEN)
 
 uint8_t uart_rxbuf[UART_BUF_NUM][UART_BUF_LEN];               // Receive  buffer
 const uint8_t uart_sync[4] = {0xf0, 0xf0, 0xf0, 0xf0};
@@ -161,6 +161,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
     static uint8_t i;
 
     while(exit_flg){
+        pinfo("downlink_handle = %d", d_status);
         switch(d_status){
             case DOWNLINK_START:
                 task_id = msg_head->idx;
@@ -173,7 +174,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     }
                 }
                 if (i == APP_BUF_NUM){
-                    data_addr = ap_malloc(UART_MAX_LEN);
+                    data_addr = ap_malloc(UART_DATA_LEN);
                 }else {
                     trans_buf[i].buf_status = TRANS_BUF_USING;
                     data_addr = (uart_head_st*)trans_buf[i].buf;
@@ -192,7 +193,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     d_status = DOWNLINK_PACKAGE;
                     break;
                 }
-                if (head_addr->len > UART_MAX_LEN){
+                if (head_addr->len > UART_DATA_LEN){
                     tx_head_addr->ctrl = CTRL_ERR_LEN;
                     d_status = DOWNLINK_PACKAGE;
                     break;
@@ -239,7 +240,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 if (APP_BUF_NUM == i){
                     tx_head_addr->win = 0;
                 } else {
-                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_MAX_LEN;
+                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_DATA_LEN;
                 }
                 tx_head_addr->id = head_addr->id;
                 tx_head_addr->ack_req = 0;
@@ -264,8 +265,10 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
             case  DOWNLINK_END:
                 ap_free(head_addr, sizeof(uart_head_st));
                 head_addr = NULL;
-                ap_free(data_addr, UART_MAX_LEN);
-                data_addr = NULL;
+                if (i == APP_BUF_NUM){
+                    ap_free(data_addr, UART_DATA_LEN);
+                    data_addr = NULL;
+                }
                 ap_free(tx_head_addr, sizeof(uart_head_st));
                 tx_head_addr = NULL;
                 exit_flg = 0;
@@ -283,7 +286,7 @@ static List_Elem* trans_list_init(void)
 {
     trans_buf[0].buf = buffer[0];
     trans_buf[1].buf = buffer[1];
-    trans_buf[0].buf_total = trans_buf[1].buf_total = BUFFER_LEN/UART_MAX_LEN;
+    trans_buf[0].buf_total = trans_buf[1].buf_total = BUFFER_LEN/UART_DATA_LEN;
     trans_buf[0].buf_index = trans_buf[1].buf_index = 0;
     trans_buf[0].buf_status = trans_buf[1].buf_status = TRANS_BUF_IDLE;
 
@@ -331,7 +334,7 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
                 uart_buf_idx = (++uart_buf_idx) >= 2 ? 0 : uart_buf_idx;
             }else if (size == sizeof(uart_head_st)){
                 recv_status = RECV_DATA;
-                wantedbytes = ((uart_head_st*)rxBuf)->len > UART_MAX_LEN ? UART_MAX_LEN : ((uart_head_st*)rxBuf)->len;
+                wantedbytes = ((uart_head_st*)rxBuf)->len > UART_DATA_LEN ? UART_DATA_LEN : ((uart_head_st*)rxBuf)->len;
             }else {
                 recv_status = RECV_HEAD;
                 wantedbytes = sizeof(uart_head_st);

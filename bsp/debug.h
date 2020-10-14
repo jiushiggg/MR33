@@ -10,7 +10,7 @@
 #define	DEBUG_LEVEL_DEBUG		3
 
 #define DEBUG_LEVEL_DFAULT		DEBUG_LEVEL_DEBUG
-#define LOG_SIZE    64
+#define LOG_SIZE    32
 
 typedef enum{
     DEBUG_SPI = (uint8_t)0,

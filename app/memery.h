@@ -20,5 +20,6 @@ extern void Core_Free(void *ptr);
 extern void ap_heap_init(void);
 extern void* ap_malloc(uint32_t size);
 extern void ap_free(void* ptr, uint32_t size);
+extern void ap_heap_stats(void);
 
 #endif

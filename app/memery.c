@@ -39,7 +39,6 @@ void Core_Free(void *ptr)
 
 
 
-
 static void printHeapStats(IHeap_Handle heap)
 {
     Memory_Stats stats;
@@ -49,10 +48,15 @@ static void printHeapStats(IHeap_Handle heap)
     pinfo("totalFreeSize = %ld", (ULong)stats.totalFreeSize);
     pinfo("totalSize = %ld", (ULong)stats.totalSize);
 #else
-    pinfo("largestFreeSize = %d", stats.largestFreeSize);
-    pinfo("totalFreeSize = %d", stats.totalFreeSize);
-    pinfo("totalSize = %d", stats.totalSize);
+    pinfo("largestFreeSize=%d\n", stats.largestFreeSize);
+    pinfo("totalFreeSize=%d\n", stats.totalFreeSize);
+    pinfo("totalSize=%d\n", stats.totalSize);
 #endif
+}
+
+void ap_heap_stats(void)
+{
+    printHeapStats(ap_heap);
 }
 
 

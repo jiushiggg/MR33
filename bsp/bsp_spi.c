@@ -23,7 +23,7 @@ void SPI_bsp_init(uint8_t* rxbuf, uint8_t* txbuf)
     // Init SPI and specify non-default parameters
     SPI_Params_init(&params);
     params.bitRate             = SPI_RATE;
-    params.frameFormat         = SPI_POL0_PHA1;
+    params.frameFormat         = SPI_POL0_PHA0;
     params.mode                = SPI_MASTER;
     params.transferMode        = SPI_MODE_BLOCKING;
     params.transferCallbackFxn = NULL;
