@@ -24,7 +24,7 @@ void semaphore_uart_init(void)
     Semaphore_Params  recSemParam;
     Semaphore_Params_init(&recSemParam);
     recSemParam.mode = ti_sysbios_knl_Semaphore_Mode_COUNTING;
-    Semaphore_construct(&uart_sem_struct, 0, &recSemParam);
+    Semaphore_construct(&uart_sem_struct, 1, &recSemParam);
     uart_sem_handle = Semaphore_handle(&uart_sem_struct);
 }
 Bool uart_write_pend(uint32_t timeout)

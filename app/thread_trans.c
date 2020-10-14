@@ -82,11 +82,7 @@ void *thread_transmit(UArg arg)
     thread_transmit_init();
     bsp_uart_init();
     semaphore_uart_init();
-    //bsp_uart_read(uart_rxbuf[0], sizeof(uart_head_st));
-    while(1){
-        bsp_uart_write("test", 5);
-        Task_sleep(100000);
-    }
+    bsp_uart_read(uart_rxbuf[0], sizeof(uart_head_st));
     while(1){
         if(true != Mailbox_pend(trans_mbox, &msg, /*BIOS_WAIT_FOREVER*/THREAD_SPI_PEND_TIME)) {
             //todo: if uart ok feed watchdog
@@ -241,9 +237,9 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 tx_head_addr->rx_sn = head_addr->tx_sn;
                 tx_head_addr->ctrl |= CTRL_ACK;
                 if (APP_BUF_NUM == i){
-                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_MAX_LEN;
-                } else {
                     tx_head_addr->win = 0;
+                } else {
+                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_MAX_LEN;
                 }
                 tx_head_addr->id = head_addr->id;
                 tx_head_addr->ack_req = 0;
@@ -258,7 +254,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 uart_write_pend(EVENT_WAIT_FOREVER);
                 bsp_uart_write(tx_head_addr, sizeof(uart_head_st));
 
-                if (head_addr->pkg == head_addr->idx && tx_head_addr->ctrl==CTRL_ACK){
+                if (head_addr->pkg == head_addr->idx){
                     d_status = DOWNLINK_END;
                 }else {
                     d_status = DOWNLINK_JUDGE;
@@ -316,6 +312,7 @@ static void thread_transmit_init(void)
 static recv_em recv_status = RECV_HEAD;
 static uint16_t wantedbytes = sizeof(uart_head_st);
 static uint8_t uart_buf_idx = 0;
+//todo: add a timer to control read time.
 void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
 {
     UARTCC26XX_Object *object =  handle->object;
