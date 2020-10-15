@@ -20,6 +20,7 @@
 #include <xdc/runtime/Error.h>
 
 #include "thread_trans.h"
+#include "trans_struct.h"
 #include "memery.h"
 #include "debug.h"
 #include "event.h"
@@ -27,23 +28,12 @@
 #include "bsp_uart.h"
 #include "crc16.h"
 #include "cc2640r2_rf.h"
+#include "task_handle.h"
 
 #define ABORT_ID    0x1000
 
 #define THREAD_SPI_PEND_TIME (30000*1000/Clock_tickPeriod)
 #define BUFFER_LEN      4096
-
-typedef enum _recv_em{
-    RECV_HEAD = 0,
-    RECV_DATA,
-    RECV_ERR
-}recv_em;
-
-
-typedef enum _trans_buf_status{
-    TRANS_BUF_USING   =   0,
-    TRANS_BUF_IDLE,
-}trans_buf_status;
 
 typedef struct trans_struct {
     List_Elem elem;
@@ -136,6 +126,8 @@ void uart_read_callback(UART_Handle handle, void *rxBuf, size_t size)
     }
 }
 
+
+
 void *thread_transmit(UArg arg)
 {
     uart_tsk_msg_t msg;
@@ -162,13 +154,16 @@ void *thread_transmit(UArg arg)
                 default:
                     break;
             }
-        }else if(MSG_UPLINK == msg.type){
+        }else if(MSG_UPLINK_REQ  == msg.type){
             trans_uplink_handle(&msg);          //uplink task, dongle send message to elinker
         }else if(MSG_TRANS_ACK == msg.type){
             trans_downlink_handle(&msg);        //downlink task, dongle send ack to elinker
-        }else{
+        }else if (MSG_EVENT == msg.type) {
+            downlink_data_handler(msg.id, msg.buf, msg.len, msg.size, (uint32_t)msg.extra);
+        }else {
             //todo: err message type
         }
+
 
     }
 }
@@ -188,6 +183,7 @@ typedef enum _down_handle{
     DOWNLINK_ERR,
     DOWNLINK_END
 }down_handle;
+
 
 void trans_uplink_handle(uart_tsk_msg_t* msg)
 {
@@ -214,8 +210,8 @@ void trans_uplink_handle(uart_tsk_msg_t* msg)
 void trans_downlink_handle(uart_tsk_msg_t* msg)
 {
     static down_handle d_status = DOWNLINK_START;
-    static uart_head_st* head_addr  = NULL;
-    static uart_head_st* data_addr  = NULL;
+    static uart_head_st* head_addr = NULL;
+    static uint8_t* data_addr = NULL;
     static uart_head_st* tx_head_addr = NULL;
     uart_head_st* msg_head  = (uart_head_st*)msg->buf;
     uint8_t exit_flg = 1;
@@ -239,7 +235,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     data_addr = ap_malloc(UART_DATA_LEN);
                 }else {
                     trans_buf[i].buf_status = TRANS_BUF_USING;
-                    data_addr = (uart_head_st*)trans_buf[i].buf;
+                    data_addr = trans_buf[i].buf;
                 }
                 d_status = DOWNLINK_JUDGE;
                 break;
@@ -271,6 +267,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     RF_cancle(rf_ch);
                     //todo: send message to rf thread, stop current rf task
                     //then rf send message to transmit thread
+                    //forward_msg_rfthread(uint16_t id, uint8_t* data, uint32_t length, uint32_t size, uint32_t storage);
                     exit_flg = 0;
                     d_status = DOWNLINK_SEND_ACK;
                     break;
@@ -285,11 +282,12 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     d_status = DOWNLINK_PACKAGE;
                     break;
                 }
-                if ((uint8_t*)data_addr+head_addr->len > trans_buf[i].buf){
+                if (data_addr+head_addr->len > trans_buf[i].buf){
                     tx_head_addr->ctrl = CTRL_OVER_FLOW;
                     d_status = DOWNLINK_PACKAGE;
                     break;
                 }
+                //todo: set data bitmap
                 data_addr += head_addr->len;
                 d_status = DOWNLINK_PACKAGE;
                 break;
@@ -302,7 +300,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 if (APP_BUF_NUM == i){
                     tx_head_addr->win = 0;
                 } else {
-                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-(uint8_t*)data_addr)/UART_DATA_LEN;
+                    tx_head_addr->win = (&trans_buf[i].buf[BUFFER_LEN]-data_addr)/UART_DATA_LEN;
                 }
                 tx_head_addr->id = head_addr->id;
                 tx_head_addr->ack_req = 0;
@@ -325,6 +323,9 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 break;
             }
             case  DOWNLINK_END:
+            {
+                uint16_t len = (data_addr>trans_buf[i].buf) ? (data_addr-trans_buf[i].buf) : 0;
+
                 ap_free(head_addr, sizeof(uart_head_st));
                 head_addr = NULL;
                 if (i == APP_BUF_NUM){
@@ -333,16 +334,39 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                 }
                 ap_free(tx_head_addr, sizeof(uart_head_st));
                 tx_head_addr = NULL;
-                exit_flg = 0;
+//todo: check bitmap
+                uart_data_send(MSG_EVENT, task_id, trans_buf[i].buf, len);
+                task_id = 0;
                 d_status = DOWNLINK_START;
                 break;
+            }
             case  DOWNLINK_ERR: //no break;
             default:
+                exit_flg = 0;
                 //todo:error handle
                 break;
         }
     }
 }
+
+int uart_data_send(uint8_t type, uint16_t id, uint8_t* data, uint32_t length)
+{
+    uart_tsk_msg_t msg = {
+        .type = (em_msg_type)type,
+        .id = id,
+        .len = length,
+        .buf = data,
+    };
+
+    //send mailbox to msg handler task
+    if(false == Mailbox_post(trans_mbox, &msg, BIOS_NO_WAIT))
+        return -1;
+
+    return 0;
+}
+
+
+
 
 static List_Elem* trans_list_init(void)
 {

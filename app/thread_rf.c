@@ -19,6 +19,17 @@
 #include "Board.h"
 #include "thread_rf.h"
 #include "debug.h"
+#include "trans_struct.h"
+
+typedef struct _rf_tsk_msg {
+    uint16_t type;
+    uint16_t id;
+    uint32_t len;
+    uint8_t* buf;
+    uint32_t size;
+    void* extra;
+}rf_tsk_msg_t;
+
 
 Mailbox_Handle rf_mbox;
 
@@ -26,33 +37,35 @@ Mailbox_Handle rf_mbox;
 
 static void thread_rf_init(void);
 
-#define BUF_LEN 64
-uint8_t txbuf1[BUF_LEN];                  // Receive and transmit buffer
+
+int8_t forward_msg_rfthread(uint16_t id, uint8_t* data, uint32_t length, uint32_t size, uint32_t storage)
+{
+    rf_tsk_msg_t msg = {
+        .type = MSG_UPLINK_REQ,
+        .id = id,
+        .len = length,
+        .buf = data,
+        .size = size,
+        .extra = (void*)storage
+    };
+
+    //send mailbox to msg handler task
+    if(true == Mailbox_post(rf_mbox, &msg, BIOS_NO_WAIT))
+        return 0;
+
+//   bsp_spi_downlink_data_free(data, size, storage);
+//todo: free data
+    pinfo("%s mail box post error\r\n", __func__);
+    return -1;
+}
+
 
 Void *thread_rf(UArg arg0, UArg arg1)
 {
-//    uint16_t i, n=0;
-//    while(1)
-//    {
-//        memset(txbuf1, 0, sizeof(txbuf1));
-//        n = rand()%BUF_LEN;
-//        if (n==0){
-//            n++;
-//        }
-//        for (i=0; i<n; i++){
-//            txbuf1[i] = '0'+2;
-//        }
-//
-//        SPI_bsp_send(txbuf1, BUF_LEN);
-//        Task_sleep(1000000/10);
-//    }
-
     TRACE();
-
     thread_rf_init();
     while(1){
-        pinfo("dongle: %s", __FUNCTION__);
-        //TRACE();
+        TRACE();
         Task_sleep(100000/10);
     }
 }
