@@ -17,6 +17,7 @@
 
 #include <ti/drivers/utils/list.h>
 #include <ti/sysbios/BIOS.h>
+#include <trans_handle.h>
 #include <xdc/runtime/Error.h>
 
 #include "thread_trans.h"
@@ -28,7 +29,6 @@
 #include "bsp_uart.h"
 #include "crc16.h"
 #include "cc2640r2_rf.h"
-#include "task_handle.h"
 
 #define ABORT_ID    0x1000
 

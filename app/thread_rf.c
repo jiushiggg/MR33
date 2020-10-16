@@ -64,9 +64,15 @@ Void *thread_rf(UArg arg0, UArg arg1)
 {
     TRACE();
     thread_rf_init();
+    rf_tsk_msg_t msg;
+
     while(1){
-        TRACE();
-        Task_sleep(100000/10);
+        if(TRUE != Mailbox_pend(rf_mbox, &msg, /*BIOS_WAIT_FOREVER*/RF_MBOX_PEND_TIME)) {
+            continue;
+        }
+        pinfo("%s receive Mailbox, ", __func__);
+        pinfo("type: %d, id: %x, len: %d", msg.type, msg.id, msg.len);
+        rf_handle(&msg);
     }
 }
 
