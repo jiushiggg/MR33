@@ -21,14 +21,7 @@
 #include "debug.h"
 #include "trans_struct.h"
 
-typedef struct _rf_tsk_msg {
-    uint16_t type;
-    uint16_t id;
-    uint32_t len;
-    uint8_t* buf;
-    uint32_t size;
-    void* extra;
-}rf_tsk_msg_t;
+
 
 
 Mailbox_Handle rf_mbox;
@@ -89,6 +82,4 @@ static void thread_rf_init(void)
     if (rf_mbox == NULL)
         pinfo("Mailbox create failed");
 
-
-    //ap_flash_init();
 }
