@@ -34,7 +34,7 @@ static void thread_rf_init(void);
 int8_t forward_msg_rfthread(uint16_t id, uint8_t* data, uint32_t length, uint32_t size, uint32_t storage)
 {
     rf_tsk_msg_t msg = {
-        .type = MSG_UPLINK_REQ,
+        .type = MSG_DOWNLINK_DATA,
         .id = id,
         .len = length,
         .buf = data,

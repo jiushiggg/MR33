@@ -20,6 +20,7 @@ typedef enum _em_msg_type{
     MSG_UART_CB,
     MSG_TRANS_ACK,
     MSG_EVENT,
+    MSG_DOWNLINK_DATA,
     MSG_ERR
 }em_msg_type;
 

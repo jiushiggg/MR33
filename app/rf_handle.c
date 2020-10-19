@@ -11,6 +11,54 @@
 #include "task_id.h"
 #include "update_type.h"
 
+
+typedef struct _rf_cmd_type{
+    uint16_t set_cmd;
+    uint32_t set_len;
+    uint32_t set_addr;
+
+    uint16_t group_wk_cmd;
+    uint32_t group_wk_len;
+    uint32_t group_wk_addr;
+
+    uint16_t frame1_cmd;
+    uint32_t frame1_len;
+    uint32_t frame1_addr;
+
+    uint16_t updata_cmd;
+    uint32_t updata_len;
+    uint32_t updata_addr;
+
+    uint16_t sleep_cmd;
+    uint32_t sleep_len;
+    uint32_t sleep_addr;
+}rf_cmd_type;
+
+typedef enum{
+    PARSE_START,
+    PARSE_DOING,
+    PARSE_END
+}em_parse_status;
+
+typedef struct _rf_parse_st{
+    em_parse_status status;
+    uint16_t rf_cmd;
+    uint32_t total_len;
+    uint32_t left_len;
+}rf_parse_st;
+
+
+rf_cmd_type rf_cmd_head;        //todo: malloc rf_data
+
+rf_parse_st data_info={
+.status = PARSE_START
+};
+
+
+
+
+
+
 static void update_fnx(uint8_t buf, uint8_t len);
 
 void rf_handle(rf_tsk_msg_t* msg)
@@ -33,10 +81,10 @@ static void update_fnx(uint8_t buf, uint8_t len)
 
 
 
-int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
+int32_t parse_cmd_data(uint8_t* cmd_data_addr, uint32_t cmd_data_len)
 {
     int32_t ret = 0;
-    uint32_t addr = cmd_data_addr;
+    uint8_t* addr = cmd_data_addr;
     int32_t left_data_len = cmd_data_len;
     uint16_t cmd = 0;
     uint32_t cmd_len = 0;
@@ -44,10 +92,10 @@ int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
 
     while(left_data_len > 0)
     {
-        cmd = g3_get_cmd(addr, &cmd_len);
-        pdebug("get cmd=0x%04X, cmd_len=%d, cmd_addr=0x%08X, left len=%d.\r\n",
+        cmd = ((data_cmd_st*)addr)->cmd;
+        cmd_len = ((data_cmd_st*)addr)->len
+        pinfo("cmd=0x%04X, len=%d, addr=0x%08X, left len=%d\n",
                 cmd, cmd_len, addr, left_data_len);
-
         switch(cmd)
         {
             case CMD_SET_WKUP_TRN:
@@ -55,20 +103,17 @@ int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
             case CMD_SET_WKUP_CH:
             case CMD_SET_WKUP_BDC:
             case CMD_SET_LED_FLASH:
-                set_cmd = cmd;
-                set_addr = addr+sizeof(cmd)+sizeof(cmd_len);
-                set_len = cmd_len;
+                rf_data.set_cmd = cmd;
+                rf_data.set_addr = addr+sizeof(cmd)+sizeof(cmd_len);
+                rf_data.set_len = cmd_len;
                 addr += sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 left_data_len -= sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 ret += 1;
-                if(cmd == CMD_SET_WKUP_BDC)
-                {
-                    set_loop_times = wakeup_get_loop_times(set_addr);
-                }
                 break;
             case CMD_GROUPN_WKUP:
-                wkup_addr = addr+sizeof(cmd)+sizeof(cmd_len);
-                wkup_len = cmd_len;
+                rf_data.group_wk_cmd = cmd;
+                rf_data.group_wk_addr = addr+sizeof(cmd)+sizeof(cmd_len);
+                rf_data.group_wk_len = cmd_len;
                 addr += sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 left_data_len -= sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 ret += 1;
@@ -76,17 +121,17 @@ int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
             case CMD_GROUP1_FRAME1:
             case CMD_GROUP1_FRAME2:
             case CMD_GROUPN_FRAME1:
-                frame1_cmd = cmd;
-                frame1_addr = addr+sizeof(cmd)+sizeof(cmd_len);
-                frame1_len = cmd_len;
+                rf_data.frame1_cmd = cmd;
+                rf_data.frame1_addr = addr+sizeof(cmd)+sizeof(cmd_len);
+                rf_data.frame1_len = cmd_len;
                 addr += sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 left_data_len -= sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 ret += 1;
                 break;
             case CMD_GROUP1_SLEEP:
             case CMD_GROUPN_SLEEP:
-                sleep_addr = addr+sizeof(cmd)+sizeof(cmd_len);
-                sleep_len = cmd_len;
+                rf_data.sleep_addr = addr+sizeof(cmd)+sizeof(cmd_len);
+                rf_data.sleep_len = cmd_len;
                 addr += sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 left_data_len -= sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 ret += 1;
@@ -98,9 +143,9 @@ int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
             case CMD_GROUP1_DATA_BDC:
             case CMD_GROUP1_DATA_NEWACK:
             case CMD_GROUPN_DATA_NEWACK:
-                updata_cmd = cmd;
-                updata_addr = addr+sizeof(cmd)+sizeof(cmd_len);
-                updata_len = cmd_len;
+                rf_data.updata_cmd = cmd;
+                rf_data.updata_addr = addr+sizeof(cmd)+sizeof(cmd_len);
+                rf_data.updata_len = cmd_len;
                 addr += sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 left_data_len -= sizeof(cmd)+sizeof(cmd_len)+cmd_len;
                 ret += 1;
@@ -117,7 +162,21 @@ int32_t parse_cmd_data(uint32_t cmd_data_addr, uint32_t cmd_data_len)
                 break;
         }
 
+        switch(data_info.status){
+            case PARSE_START:
+                data_info.total_len = cmd_data_len
+                break;
+            case PARSE_DOING:
+                break;
+            case PARSE_END:
+                break;
+            default:
+                break;
+        }
+
     }
+
+
 
     debug_local_cmd();
 
