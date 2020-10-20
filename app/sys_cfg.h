@@ -13,4 +13,7 @@
 #define MAX_TRANS_PACKET_NUM    48  //137*1400/512/8
 #define MAX_PACKET_NUM          384
 
+
+#define BUFFER_LEN      4096
+
 #endif

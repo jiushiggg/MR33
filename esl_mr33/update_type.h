@@ -61,10 +61,10 @@ typedef struct _set_wkup_st{
     uint8_t set_wkup_data[0];
 }set_wkup_st;
 
-typedef struct  _data_cmd_st{
+typedef struct  _data_head_st{
     uint16_t cmd;
     uint32_t len;
-}data_cmd_st;
+}data_head_st;
 
 typedef struct _mixed_group_f1_st{
     uint16_t cmd;
