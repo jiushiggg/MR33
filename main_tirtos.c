@@ -121,6 +121,7 @@ void app_init(void)
 }
 
 extern void *thread_transmit(UArg arg);
+extern Void *thread_rf(UArg arg0, UArg arg1);
 
 static void dongle_task_creat(void)
 {
@@ -134,10 +135,10 @@ static void dongle_task_creat(void)
     Task_construct(&task0_Struct, (Task_FuncPtr)thread_transmit, &taskParams_0, NULL);
 
 
-//    Task_Params_init(&taskParams_0);
-//    taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
-//    taskParams_0.stackSize = TASK1_STACKSIZE;
-//    taskParams_0.stack = &task1_Stack;
-//    taskParams_0.priority = 1;          //second run
-//    Task_construct(&task1_Struct, (Task_FuncPtr)thread_rf, &taskParams_0, NULL);
+    Task_Params_init(&taskParams_0);
+    taskParams_0.arg0 = 1000000 / Clock_tickPeriod;
+    taskParams_0.stackSize = TASK1_STACKSIZE;
+    taskParams_0.stack = &task1_Stack;
+    taskParams_0.priority = 1;          //second run
+    Task_construct(&task1_Struct, (Task_FuncPtr)thread_rf, &taskParams_0, NULL);
 }

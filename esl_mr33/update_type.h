@@ -182,6 +182,8 @@ typedef struct _query_st{
 #define CMD_GROUPN_DATA_G2      0x0360
 #define CMD_GROUPN_SLEEP        0x03B0
 
+#define CMD_QUERY               0x03A0
+
 #define CMD_ACK                 0x0900
 #define CMD_ACK_NEW             0x0901
 
