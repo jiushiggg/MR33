@@ -120,6 +120,7 @@ void app_init(void)
     dongle_task_creat();
 }
 
+extern void *thread_transmit(UArg arg);
 
 static void dongle_task_creat(void)
 {

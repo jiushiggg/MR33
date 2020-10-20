@@ -6,10 +6,14 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+
 #include "rf_handle.h"
 #include "thread_rf.h"
 #include "task_id.h"
 #include "update_type.h"
+#include "debug.h"
 
 
 typedef struct _htpv3_cmd_addr{
@@ -34,10 +38,13 @@ typedef struct _rf_parse_st{
 }rf_parse_st;
 
 
-htpv3_cmd_addr rf_cmd_head;        //todo: malloc rf_data
+static void update_fnx(uint8_t* buf, uint8_t len);
+
+htpv3_cmd_addr rf_cmd_head;        //todo: malloc rf_cmd_head
 
 rf_parse_st data_info={
-.status = PARSE_START
+.status = PARSE_START,
+.cmd_left_len = 0
 };
 
 
@@ -45,7 +52,7 @@ rf_parse_st data_info={
 
 
 
-static void update_fnx(uint8_t buf, uint8_t len);
+
 
 void rf_handle(rf_tsk_msg_t* msg)
 {
@@ -59,69 +66,65 @@ void rf_handle(rf_tsk_msg_t* msg)
     }
 }
 
-static void update_fnx(uint8_t buf, uint8_t len)
+static void update_fnx(uint8_t* buf, uint8_t len)
 {
 
 }
 
+void debug_local_cmd(htpv3_cmd_addr* tmp, rf_parse_st* info)
+{
+    data_head_st *head = NULL;
+    pdebug("++++++++++++++\n");
+    head = (data_head_st*)tmp->set_addr;
+    pdebug("set cmd=0x%04X, addr=0x%08X, len = %d\r\n", head->cmd, head, head->len);
+    head = (data_head_st*)tmp->group_wk_addr;
+    pdebug("wkup addr=0x%08X, len=%d\n", head->cmd, head, head->len);
+    head = (data_head_st*)tmp->frame1_addr;
+    pdebug("frame1 addr=0x%08X, len=%d\n", head->cmd, head, head->len);
+    head = (data_head_st*)tmp->sleep_addr;
+    pdebug("sleep addr=0x%08X, len=%d\r\n", head->cmd, head, head->len);
+    head = (data_head_st*)tmp->updata_addr;
+    pdebug("updata cmd=0x%04X, addr=0x%08X,len=%d\n", head->cmd, head, head->len);
+
+    pdebug("last cmd=%d, total_len=%d, left_len=%d\n", info->rf_cmd, info->cmd_total_len);
+    pdebug("status=%d, left_len=%d\n", info->status, info->cmd_left_len);
+    pdebug("++++++++++++++\n");
+}
 
 
-
-int8_t parse_cmd_data(uint8_t* cmd_data_addr, uint32_t len)
+int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len)
 {
     int8_t ret = 0;
-    uint8_t* addr = cmd_data_addr;
-    int32_t left_len = len;
-    uint16_t cmd = 0;
-    uint32_t cmd_len = 0;
-
-
-
+    uint8_t* head_addr = addr;
+    memset(&rf_cmd_head, 0, sizeof(htpv3_cmd_addr));
 
     while(left_len > 0)
     {
-        switch(data_info.status){
-            case PARSE_START:
-                cmd = ((data_head_st*)addr)->cmd;
-                cmd_len = ((data_head_st*)addr)->len;
-
-                data_info.rf_cmd = cmd;
-                data_info.cmd_total_len = data_info.cmd_left_len = cmd_len;
-
-                break;
-            case PARSE_DOING:
-                cmd = data_info.rf_cmd;
-                cmd_len = data_info.cmd_total_len;
-                break;
-            case PARSE_END:
-                break;
-            default:
-                break;
+        if (0 == data_info.cmd_left_len){
+            data_info.rf_cmd = ((data_head_st*)head_addr)->cmd;
+            data_info.cmd_total_len = ((data_head_st*)head_addr)->len + sizeof(data_head_st);
         }
-        cmd = ((data_head_st*)addr)->cmd;
-        cmd_len = ((data_head_st*)addr)->len
-        pinfo("cmd=0x%04X, len=%d, addr=0x%08X, left len=%d\n",
-                cmd, cmd_len, addr, left_len);
-        switch(cmd)
+
+        switch(data_info.rf_cmd)
         {
             case CMD_SET_WKUP_TRN:
             case CMD_SET_WKUP_GLB:
             case CMD_SET_WKUP_CH:
             case CMD_SET_WKUP_BDC:
             case CMD_SET_LED_FLASH:
-                rf_data.set_addr = addr;
+                rf_cmd_head.set_addr = head_addr;
                 break;
             case CMD_GROUPN_WKUP:
-                rf_data.group_wk_addr = addr;
+                rf_cmd_head.group_wk_addr = head_addr;
                 break;
             case CMD_GROUP1_FRAME1:
             case CMD_GROUP1_FRAME2:
             case CMD_GROUPN_FRAME1:
-                rf_data.frame1_addr = addr;
+                rf_cmd_head.frame1_addr = head_addr;
                 break;
             case CMD_GROUP1_SLEEP:
             case CMD_GROUPN_SLEEP:
-                rf_data.sleep_addr = addr
+                rf_cmd_head.sleep_addr = head_addr;
                 break;
             case CMD_GROUP1_DATA:
             case CMD_GROUPN_DATA:
@@ -130,38 +133,32 @@ int8_t parse_cmd_data(uint8_t* cmd_data_addr, uint32_t len)
             case CMD_GROUP1_DATA_BDC:
             case CMD_GROUP1_DATA_NEWACK:
             case CMD_GROUPN_DATA_NEWACK:
-                rf_data.updata_addr = addr;
+                rf_cmd_head.updata_addr = head_addr;
                 break;
             case CMD_SET_WKUP:
             case CMD_GROUP1:
             case CMD_GROUPN:
-                addr += sizeof(data_head_st);
-                left_len -= sizeof(data_head_st);
-                cmd_len = 0;
+                data_info.cmd_total_len = sizeof(data_head_st);
                 break;
             default:
                 ret = -1;
-                left_len = 0;
                 break;
         }
 
-        if (cmd_len > BUFFER_LEN){
-            data_info.cmd_left_len -= cmd_len;
-            addr += sizeof(data_head_st)+cmd_len;
-            left_len -= sizeof(data_head_st)+cmd_len;
-        }else {
-            data_info.cmd_left_len -= left_len;
-            addr = 0;
+        if (data_info.cmd_total_len < left_len){
+            head_addr += data_info.cmd_total_len;
+            left_len -= data_info.cmd_total_len;
+            data_info.cmd_left_len = 0;
+            data_info.status = PARSE_END;
+        } else {
+            head_addr = NULL;
             left_len = 0;
+            data_info.cmd_left_len = data_info.cmd_total_len - sizeof(data_head_st) - left_len;
             data_info.status = PARSE_DOING;
-            return 0;
         }
-
     }
 
-
-
-    debug_local_cmd();
+    debug_local_cmd(&rf_cmd_head, &data_info);
 
     return ret;
 }

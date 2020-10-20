@@ -29,11 +29,12 @@
 #include "bsp_uart.h"
 #include "crc16.h"
 #include "cc2640r2_rf.h"
+#include "sys_cfg.h"
 
 #define ABORT_ID    0x1000
 
 #define THREAD_SPI_PEND_TIME (30000*1000/Clock_tickPeriod)
-#define BUFFER_LEN      4096
+
 
 typedef struct trans_struct {
     List_Elem elem;
