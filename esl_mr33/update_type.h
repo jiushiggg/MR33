@@ -36,6 +36,13 @@ typedef struct _basic_data_st{
     uint8_t data[ESL_DATA_LEN];
 }basic_data_st;
 
+typedef struct _mr33_data_st{
+    uint8_t id[ESL_ID_LEN];
+    uint8_t channel;
+    uint8_t len;
+    uint8_t data[ESL_DATA_LEN];
+}mr33_data_st;
+
 typedef struct _basic_data1_st{
     uint8_t id[ESL_ID_LEN];
     uint8_t channel;
@@ -108,7 +115,7 @@ typedef struct _group_data_st{
     uint8_t channel;
     uint8_t reserved[4];
     uint16_t num;
-    uint8_t data[0];
+    mr33_data_st data[0];
 }group_data_st;
 
 typedef struct _sleep_st{
@@ -123,7 +130,7 @@ typedef struct _sleep_st{
     uint8_t default_len;
     uint8_t reserved[7];
     uint16_t num;
-    uint8_t data[0];
+    basic_data_st data[0];
 }sleep_st;
 
 
@@ -156,7 +163,7 @@ typedef struct _query_st{
     uint8_t channel;
     uint8_t reserved[4];
     uint16_t num;
-    uint8_t data[0][26];
+    uint8_t data[0][ESL_DATA_LEN];
 }query_st;
 
 

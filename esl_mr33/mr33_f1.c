@@ -114,11 +114,11 @@ static uint8_t frame2(void* addr, uint8_t num, int32_t duration)
         }
 
         timercount = TIM_GetCount(timer);
-        memcpy((cur+i)->data+2, &timercount, sizeof(timercount));
+        memcpy(cur[i].data+2, &timercount, sizeof(timercount));
         crc = 0;
-        crc = CRC16_CaculateStepByStep(crc, (cur+i)->data, 24);
-        crc = CRC16_CaculateStepByStep(crc, (cur+i)->id, 4);
-        memcpy((cur+i)->data+24, &crc, sizeof(crc));
+        crc = CRC16_CaculateStepByStep(crc, cur[i].data, 24);
+        crc = CRC16_CaculateStepByStep(crc, cur[i].id, 4);
+        memcpy(cur[i].data+24, &crc, sizeof(crc));
 
         /*
         pdebug("_frame2 %d: id=0x%02X-0x%02X-0x%02X-0x%02X, channel=%d, len=%d, data=", \
@@ -128,7 +128,7 @@ static uint8_t frame2(void* addr, uint8_t num, int32_t duration)
         if (PEND_START == pend_flg){
             send_pend(result);
         }
-        result = send_without_wait((cur+i)->id, (cur+i)->data, (cur+i)->len, (cur+i)->channel, 6000);
+        result = send_without_wait(cur[i].id, cur[i].data, cur[i].len, cur[i].channel, 6000);
         pend_flg = PEND_START;
 
         i = ++i >= num ? 0 : i;
@@ -182,7 +182,7 @@ static uint8_t frame1_mode0(void* addr, uint8_t num, int32_t duration)
         if (PEND_START == pend_flg){
             send_pend(result);
         }
-        result = send_without_wait((cur+i)->id, (cur+i)->data, (cur+i)->len, (cur+i)->channel, 6000);
+        result = send_without_wait(cur[i].id, cur[i].data, cur[i].len, cur[i].channel, 6000);
         pend_flg = PEND_START;
 
         i = ++i >= num ? 0 : i;
