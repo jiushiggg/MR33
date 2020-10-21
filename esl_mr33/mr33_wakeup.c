@@ -12,6 +12,11 @@
 #include "cc2640r2_rf.h"
 #include "timer.h"
 
+
+static int8_t set_wakeup_led_flash(void* addr, void* f1_addr);
+static int8_t wakeup_start(void* addr, uint8_t type);
+
+
 int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
     int8_t ret = 0;
@@ -53,7 +58,7 @@ int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 
 #define RF_CHANING_MODE
 
-int8_t wakeup_start(void* addr, uint8_t type)
+static int8_t wakeup_start(void* addr, uint8_t type)
 {
     wkup_st* wkup_addr =  (wkup_st*)addr;
     basic_data_st *basic_data = (basic_data_st *)wkup_addr->data;
@@ -199,7 +204,7 @@ done:
 }
 
 
-int8_t set_wakeup_led_flash(void* addr, void* f1_addr)
+static int8_t set_wakeup_led_flash(void* addr, void* f1_addr)
 {
     set_wkup_st* wkup_addr =  (set_wkup_st*)addr;
     basic_data_st *basic_data = (basic_data_st *)(wkup_addr->data);
