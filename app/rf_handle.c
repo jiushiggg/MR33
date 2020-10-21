@@ -14,40 +14,29 @@
 #include "task_id.h"
 #include "update_type.h"
 #include "debug.h"
+#include "update_mr33.h"
 
 
-typedef enum{
-    PARSE_START,
-    PARSE_DOING,
-    PARSE_END
-}em_parse_status;
+typedef  int8_t (*cmd_start_func)(uint8_t** addr, uint8_t n, rf_parse_st* info);
+
+extern int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t updata_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+
+cmd_start_func cmd_start[HANDLE_MAX_NUM] = {set_wk_handle, group_wk_handle, frame1_handle, \
+                                            sleep_handle, updata_handle, query_handle};
 
 
-
-typedef  int8_t (*cmd_start_func)(void** addr, uint8_t i, rf_parse_st* info);
-
-
-enum{
-    SET_WK = (uint8_t) 0,
-    GROUP_WK,
-    FRAME1,
-    SLEEP,
-    UPDATA,
-    QUERY,
-    HANDLE_MAX_NUM
-}em_cmd;
-
-cmd_start_fnx cmd_start[HANDLE_MAX_NUM] = {set_wk_handle, group_wk_handle, frame1_handle,
-                                     sleep_handle, updata_handle, query_handle};
-
-
-uint8_t* rf_cmd_head[MAX_FUNC];        //todo: malloc rf_cmd_head
+uint8_t* rf_cmd_head[HANDLE_MAX_NUM];        //todo: malloc rf_cmd_head
 
 
 static void update_fnx(uint8_t* buf, uint8_t len);
-static void debug_local_cmd(htpv3_cmd_addr* tmp, rf_parse_st* info);
+static void debug_local_cmd(uint8_t* tmp, rf_parse_st* info);
 static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len);
-
+volatile uint8_t core_idel_flag = 0;
 
 
 rf_parse_st data_info={
@@ -77,7 +66,7 @@ static void update_fnx(uint8_t* buf, uint8_t len)
 
     for (uint8_t i=0; i<HANDLE_MAX_NUM; i++){
         if (NULL != rf_cmd_head[i]){
-            cmd_start[i](&rf_cmd_head, i, &data_info);
+            cmd_start[i](&rf_cmd_head[i], i, &data_info);
             rf_cmd_head[i] = NULL;
         }
     }
@@ -88,7 +77,7 @@ static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len)
 {
     int8_t ret = 0;
     uint8_t* head_addr = addr;
-    memset(&rf_cmd_head, 0, sizeof(htpv3_cmd_addr));
+    memset(rf_cmd_head, 0, sizeof(rf_cmd_head[HANDLE_MAX_NUM]));
 
     while(left_len > 0)
     {
@@ -159,22 +148,31 @@ static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len)
     return ret;
 }
 
-static void debug_local_cmd(htpv3_cmd_addr* tmp, rf_parse_st* info)
+
+static void debug_local_cmd(uint8_t* tmp, rf_parse_st* info)
 {
     data_head_st *head = NULL;
     pdebug("++++++++++++++\n");
-    head = (data_head_st*)tmp->set_addr;
+    head = (data_head_st*)tmp[SET_WK];
     pdebug("set cmd=0x%04X, addr=0x%08X, len = %d\r\n", head->cmd, head, head->len);
-    head = (data_head_st*)tmp->group_wk_addr;
+    head = (data_head_st*)tmp[GROUP_WK];
     pdebug("wkup addr=0x%08X, len=%d\n", head->cmd, head, head->len);
-    head = (data_head_st*)tmp->frame1_addr;
+    head = (data_head_st*)tmp[FRAME1];
     pdebug("frame1 addr=0x%08X, len=%d\n", head->cmd, head, head->len);
-    head = (data_head_st*)tmp->sleep_addr;
+    head = (data_head_st*)tmp[SLEEP];
     pdebug("sleep addr=0x%08X, len=%d\r\n", head->cmd, head, head->len);
-    head = (data_head_st*)tmp->updata_addr;
+    head = (data_head_st*)tmp[UPDATA];
     pdebug("updata cmd=0x%04X, addr=0x%08X,len=%d\n", head->cmd, head, head->len);
+    head = (data_head_st*)tmp[QUERY];
+    pdebug("query cmd=0x%04X, addr=0x%08X,len=%d\n", head->cmd, head, head->len);
 
     pdebug("last cmd=%d, total_len=%d, left_len=%d\n", info->rf_cmd, info->cmd_total_len);
     pdebug("status=%d, left_len=%d\n", info->status, info->cmd_left_len);
     pdebug("++++++++++++++\n");
+}
+
+
+uint8_t Core_GetQuitStatus(void)
+{
+    return core_idel_flag;
 }

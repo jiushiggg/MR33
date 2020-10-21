@@ -48,7 +48,7 @@ typedef struct _basic_data1_st{
 typedef struct _set_wkup_st{
     uint16_t cmd;
     uint32_t len;
-    uint16_t bandrate;
+    uint16_t rate;
     uint8_t power;
     uint8_t duration;
     uint8_t slot_duration;
@@ -61,6 +61,18 @@ typedef struct _set_wkup_st{
     uint8_t set_wkup_data[0];
 }set_wkup_st;
 
+typedef struct _wkup_st{
+    uint16_t cmd;
+    uint32_t len;
+    uint16_t rate;
+    uint8_t power;
+    uint8_t duration;
+    uint8_t slot_duration;
+    uint8_t reserved[8];
+    uint8_t set_numbers;
+    uint8_t data[0];
+}wkup_st;
+
 typedef struct  _data_head_st{
     uint16_t cmd;
     uint32_t len;
@@ -69,7 +81,7 @@ typedef struct  _data_head_st{
 typedef struct _mixed_group_f1_st{
     uint16_t cmd;
     uint32_t len;
-    uint16_t bandrate;
+    uint16_t rate;
     uint8_t power;
     uint8_t duration;
     uint8_t mode;
@@ -102,7 +114,7 @@ typedef struct _group_data_st{
 typedef struct _sleep_st{
     uint16_t cmd;
     uint32_t len;
-    uint16_t bandrate;
+    uint16_t rate;
     uint8_t power;
     uint8_t mode;
     uint8_t interval;
@@ -114,29 +126,19 @@ typedef struct _sleep_st{
     uint8_t data[0];
 }sleep_st;
 
-typedef struct _group_wkup_st{
-    uint16_t cmd;
-    uint32_t len;
-    uint16_t bandrate;
-    uint8_t power;
-    uint8_t duration;
-    uint8_t slot_duration;
-    uint8_t reserved[8];
-    uint8_t set_numbers;
-    uint8_t group_wkup_data[0];
-}group_wkup_st;
 
-typedef struct normal_group_f1_st{
+
+typedef struct _frame1_st{
     uint16_t cmd;
     uint32_t len;
-    uint16_t bandrate;
+    uint16_t rate;
     uint8_t power;
     uint8_t duration;
     uint8_t mode;
     uint8_t reserved[8];
     uint16_t num;
     basic_data_st data[0];
-}normal_group_f1_st;
+}frame1_st;
 
 typedef struct _query_st{
     uint16_t cmd;

@@ -5,63 +5,232 @@
  *      Author: gaolongfei
  */
 
+#include <stddef.h>
+
 #include "update_mr33.h"
 #include "update_type.h"
 #include "rf_handle.h"
 #include "debug.h"
 
+#include "cc2640r2_rf.h"
+#include "timer.h"
 
-int8_t set_wk_handle(void** addr, rf_parse_st* info)
+int8_t wakeup_start(void* addr, uint8_t type);
+int8_t set_wakeup_led_flash(void* set_addr, void* frame1_addr);
+
+
+int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-    set_wkup_st *set = (set_wkup_st*)addr;
+    int8_t ret = 0;
+    set_wkup_st* set = (set_wkup_st*)addr[n];
+    frame1_st* frame1 = (frame1_st*)addr[FRAME1];
+
     TRACE();
 
     if((set->cmd==CMD_SET_WKUP_TRN)||(set->cmd==CMD_SET_WKUP_BDC))
     {
-        pdebug("set wkup trn & bdc, loop:%d\r\n", set_loop_times);
-        pinfoEsl("sw0 bg\r\n");
-        wakeup_start(set_addr, set_len, 0);
+        pdebug("set wkup trn & bdc, loop:%d\n", set->loop_time);
+        wakeup_start(set, 0);
     }
     else if((set->cmd==CMD_SET_WKUP_GLB) || (set->cmd==CMD_SET_WKUP_CH))
     {
-        pinfoEsl("sw1 bg\r\n");
-        pdebug("set wkup glb & ch\r\n");
-        wakeup_start(set_addr, set_len, 1);
+        pinfo("sw1 bg\n");
+        wakeup_start(set, 1);
 
     }
-    else if (set_cmd == CMD_SET_LED_FLASH)
+    else if (set->cmd == CMD_SET_LED_FLASH)
     {
-        pinfo("sw2 bg\r\n");
-        set_wakeup_led_flash(set_addr, &frame1_addr, updata_table->data, set_len);
+        pinfo("sw2 bg\n");
+        set_wakeup_led_flash(set, frame1);
+        frame1 = NULL;
     }
 
+    return ret;
 }
 
-int8_t group_wk_handle(void** addr, rf_parse_st* info)
+int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-
+    wkup_st *group = (wkup_st*)addr[n];
+    pinfo("sw1 bg\r\n");
+    wakeup_start(group, 1);
+    return 0;
 }
 
-int8_t frame1_handle(void** addr, rf_parse_st* info)
+int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-
+    return 0;
 }
 
-int8_t sleep_handle(void* addr, rf_parse_st* info)
+int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-
+    return 0;
 }
 
-int8_t updata_handle(void** addr, rf_parse_st* info)
+int8_t updata_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-
+    return 0;
 }
 
-int8_t query_handle(void** addr, rf_parse_st* info)
+int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
-
+    return 0;
 }
 
 
 
 
+
+#define RF_CHANING_MODE
+
+int8_t wakeup_start(void* addr, uint8_t type)
+{
+    wkup_st* wkup_addr =  (wkup_st*)addr;
+    basic_data_st *basic_data = (basic_data_st *)wkup_addr->data;
+    int8_t ret = 0;
+    uint8_t timer = 0;
+    uint16_t timer_count = 0;
+    uint32_t duration_ms = 0;
+    uint32_t rf_time = 0;
+    uint8_t ctrl = 0;
+
+#ifdef RF_CHANING_MODE
+    uint8_t *data = NULL;
+#else
+    uint8_t data[SIZE_ESL_DATA_BUF] = {0};
+#endif
+
+    RF_EventMask result;
+    uint8_t  pend_flg = PEND_STOP;
+#ifdef RF_CHANING_MODE
+    send_chaningmode_init();
+    write2buf = listInit();
+#endif
+    pdebug("wkup addr=0x%08X, len=%d\r\n", addr, wkup_addr->len);
+
+    if((addr==NULL))
+    {
+        ret = -1;
+        goto done;
+    }
+    if (0 == wkup_addr->len){
+        ret = -1;
+        goto done;
+    }
+
+    pdebug("wkup para: datarate=%d, power=%d, duration=%d, slot_duration=%d\n",
+           wkup_addr->rate, wkup_addr->power, wkup_addr->duration, wkup_addr->slot_duration);
+
+    if(wkup_addr->duration == 0)
+    {
+        pdebug("warning: wkup duration is 0\r\n");
+        goto done;
+    }
+#ifdef RF_CHANING_MODE
+    data = ((MyStruct*)write2buf)->tx->pPkt;
+#endif
+    memcpy(data, basic_data->data, basic_data->len);
+
+    pdebug("wkup id:0x%02X-0x%02X-0x%02X-0x%02X, channel=%d, len=%d, data=", \
+           basic_data->id[0], basic_data->id[1], basic_data->id[2], basic_data->id[3], basic_data->channel, basic_data->len);
+    pdebughex(data, basic_data->len);
+
+    ctrl = data[0];
+
+
+//#define GGG_DEBUG
+#ifdef GGG_DEBUG
+    slot_duration = 10;
+    duration = 4;
+    interval = 23;
+    datarate = DATA_RATE_500K;
+    id[0] = 52; id[1] = 0x56; id[2] = 0x78; id[3] = 0x53;
+    channel = 2;
+    data_len = 26;
+#endif
+
+
+    set_power_rate(wkup_addr->power, wkup_addr->rate);
+    set_frequence(basic_data->channel);
+#ifdef RF_CHANING_MODE
+#else
+    send_data_init(basic_data->id, basic_data->data, basic_data->data_len, 5000);
+#endif
+    rf_time = RF_getCurrentTime();
+    if(1 == ((set_wkup_st*)addr)->mode)
+    {
+        duration_ms = 200;
+    }
+    else
+    {
+        duration_ms = (uint32_t)wkup_addr->duration * 1000 - 500;
+    }
+
+    if((timer=TIM_Open(wkup_addr->slot_duration, duration_ms/wkup_addr->slot_duration, TIMER_DOWN_CNT, TIMER_PERIOD)) == TIMER_UNKNOW)
+    {
+        perr("g3_wkup() open timer.\r\n");
+        ret = -4;
+        goto done;
+    }
+
+    while(TIME_COUNTING==TIM_CheckTimeout(timer))
+    {
+        if(Core_GetQuitStatus() == 1)
+        {
+            pdebug("g3_wkup quit\r\n");
+            break;
+        }
+#ifdef RF_CHANING_MODE
+        data = ((MyStruct*)write2buf)->tx->pPkt;
+#endif
+        if(type == 0) // 0 is default
+        {
+            timer_count = TIM_GetCount(timer);
+
+            if(ctrl == 0xAA)
+            {
+                data[0] = ctrl;
+            }
+            else
+            {
+                data[0] = (ctrl&0xE0) | ((timer_count >> 8) & 0x1f);
+            }
+
+            data[1] = timer_count & 0xff;
+        }
+
+
+#ifdef RF_CHANING_MODE
+        if (PEND_STOP == pend_flg){
+            pend_flg = PEND_START;
+            result = send_chaningmode(basic_data->id, data, basic_data->len, 6000);
+            memcpy(((MyStruct*)write2buf->next)->tx->pPkt, data, basic_data->len);
+            write2buf = List_next(write2buf);
+        }else{
+            RF_wait_cmd_finish();
+            //write2buf = List_next(write2buf);
+        }
+#else
+        if (PEND_START == pend_flg){
+            send_pend(result);
+        }
+        result = send_async(rf_time);
+        pend_flg = PEND_START;
+#endif
+    }
+#ifdef RF_CHANING_MODE
+    RF_wait_cmd_finish(); //Wait for the last packet to be sent
+    RF_cancle(result);
+#endif
+    TIM_Close(timer);
+
+    ret = 1;
+done:
+    return ret;
+}
+
+
+int8_t set_wakeup_led_flash(void* set_addr, void* frame1_addr)
+{
+    int8_t ret = 0;
+    return ret;
+}

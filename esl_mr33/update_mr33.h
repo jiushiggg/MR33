@@ -7,6 +7,7 @@
 
 #ifndef ESL_MR33_UPDATE_MR33_H_
 #define ESL_MR33_UPDATE_MR33_H_
+#include <stdint.h>
 
 
 
