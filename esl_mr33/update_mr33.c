@@ -90,7 +90,6 @@ int8_t wakeup_start(void* addr, uint8_t type)
     uint8_t timer = 0;
     uint16_t timer_count = 0;
     uint32_t duration_ms = 0;
-    uint32_t rf_time = 0;
     uint8_t ctrl = 0;
 
 #ifdef RF_CHANING_MODE
@@ -229,8 +228,101 @@ done:
 }
 
 
-int8_t set_wakeup_led_flash(void* set_addr, void* frame1_addr)
+int8_t set_wakeup_led_flash(void* addr, void* f1_addr)
 {
+    set_wkup_st* wkup_addr =  (set_wkup_st*)addr;
+    basic_data_st *basic_data = (basic_data_st *)(wkup_addr->data);
+    frame1_st* frame1_addr = (frame1_st*)f1_addr;
+    basic_data_st *f1_basic_data = frame1_addr->data;
     int8_t ret = 0;
+    uint8_t timer = 0;
+    uint32_t duration_ms = 0;
+    uint8_t j = 0;
+
+    pdebug("wkup addr=0x%08X, f1 addr=0x%08X, len=%d\r\n", wkup_addr, frame1_addr, wkup_addr->len);
+    if(wkup_addr==NULL || frame1_addr==NULL)
+    {
+        ret = -1;
+        goto done;
+    }
+
+    if (0 == wkup_addr->len){
+        ret = -1;
+        goto done;
+    }
+
+
+    pdebug("wkup para: datarate=%d, power=%d, duration=%d, slot_duration=%d\r\n", \
+           wkup_addr->rate, wkup_addr->power, wkup_addr->duration, wkup_addr->slot_duration);
+
+    if(wkup_addr->duration == 0)
+    {
+        pdebug("warning: wkup duration is 0\r\n");
+        goto done;
+    }
+
+
+    pinfo("wkup data: id:0x%02X-0x%02X-0x%02X-0x%02X, channel=%d, len=%d, data=", \
+          basic_data->id[0], basic_data->id[1], basic_data->id[2], basic_data->id[3], basic_data->channel, basic_data->len);
+
+#if FLASH_LED_TEST
+    pinfo("num:%d ", group_data->group_num);
+    for (j=0; j< group_data->group_num; j++){
+        pdebughex1((uint8_t*)&group_data->data[j], 32);
+    }
+    j = 0;
+#endif
+//#define GGG_DEBUG
+#ifdef GGG_DEBUG
+    slot_duration = 10;
+    duration = 4;
+    interval = 23;
+    datarate = DATA_RATE_500K;
+    id[0] = 52; id[1] = 0x56; id[2] = 0x78; id[3] = 0x53;
+    channel = 2;
+    data_len = 26;
+#endif
+
+
+    set_power_rate(wkup_addr->power, wkup_addr->rate);
+    set_frequence(basic_data->channel);
+    if(wkup_addr->mode == 1)
+    {
+        duration_ms = (uint32_t)wkup_addr->duration * 10;
+    }
+    else
+    {
+        duration_ms = (uint32_t)wkup_addr->duration * 1000 - 700;
+    }
+
+    if((timer=TIM_Open(wkup_addr->slot_duration, duration_ms/wkup_addr->slot_duration, TIMER_DOWN_CNT, TIMER_PERIOD)) == TIMER_UNKNOW)
+    {
+        perr("g3_wkup() open timer.\r\n");
+        ret = -4;
+        goto done;
+    }
+#ifdef FLASH_LED_TEST
+    data[0] = 0xE0;
+    data[1] = 0;
+    data[2] = 0xff;
+    data[3] = 0xff;
+    data[4] = 0xff;
+    data[5] = 0x0;
+#endif
+    while(TIME_COUNTING==TIM_CheckTimeout(timer))
+    {
+        if(Core_GetQuitStatus() == 1)
+        {
+            pdebug("g3_wkup quit\r\n");
+            break;
+        }
+        basic_data->data[0] = (basic_data->data[0]&0xE0) | (j+1);
+        send_flash_led_data(basic_data->id, basic_data->data, f1_basic_data[j].id, f1_basic_data[j].data);
+        j = ++j >= frame1_addr->num ? 0 : j;
+    }
+
+    TIM_Close(timer);
+    ret = 1;
+done:
     return ret;
 }

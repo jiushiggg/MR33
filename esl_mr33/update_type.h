@@ -58,7 +58,7 @@ typedef struct _set_wkup_st{
     uint8_t main_channel;
     uint8_t n;
     uint8_t set_numbers;
-    uint8_t set_wkup_data[0];
+    uint8_t data[0];
 }set_wkup_st;
 
 typedef struct _wkup_st{
