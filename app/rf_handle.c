@@ -34,7 +34,7 @@ uint8_t* rf_cmd_head[HANDLE_MAX_NUM];        //todo: malloc rf_cmd_head
 
 
 static void update_fnx(uint8_t* buf, uint8_t len);
-static void debug_local_cmd(uint8_t* tmp, rf_parse_st* info);
+static void debug_local_cmd(uint8_t **tmp, rf_parse_st* info);
 static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len);
 volatile uint8_t core_idel_flag = 0;
 
@@ -66,7 +66,7 @@ static void update_fnx(uint8_t* buf, uint8_t len)
 
     for (uint8_t i=0; i<HANDLE_MAX_NUM; i++){
         if (NULL != rf_cmd_head[i]){
-            cmd_start[i](&rf_cmd_head[i], i, &data_info);
+            cmd_start[i](rf_cmd_head, i, &data_info);
             rf_cmd_head[i] = NULL;
         }
     }
@@ -143,13 +143,12 @@ static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len)
         }
     }
 
-    debug_local_cmd(&rf_cmd_head, &data_info);
+    debug_local_cmd(rf_cmd_head, &data_info);
 
     return ret;
 }
 
-
-static void debug_local_cmd(uint8_t* tmp, rf_parse_st* info)
+static void debug_local_cmd(uint8_t **tmp, rf_parse_st* info)
 {
     data_head_st *head = NULL;
     pdebug("++++++++++++++\n");
@@ -170,6 +169,7 @@ static void debug_local_cmd(uint8_t* tmp, rf_parse_st* info)
     pdebug("status=%d, left_len=%d\n", info->status, info->cmd_left_len);
     pdebug("++++++++++++++\n");
 }
+
 
 
 uint8_t Core_GetQuitStatus(void)
