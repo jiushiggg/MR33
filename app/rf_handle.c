@@ -33,7 +33,7 @@ cmd_start_func cmd_start[HANDLE_MAX_NUM] = {set_wk_handle, group_wk_handle, fram
 uint8_t* rf_cmd_head[HANDLE_MAX_NUM];        //todo: malloc rf_cmd_head
 
 
-static void update_fnx(uint8_t* buf, uint8_t len);
+static void update_func(uint8_t* buf, uint8_t len);
 static void debug_local_cmd(uint8_t **tmp, rf_parse_st* info);
 static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len);
 volatile uint8_t core_idel_flag = 0;
@@ -53,12 +53,17 @@ void rf_handle(rf_tsk_msg_t* msg)
         case CORE_CMD_ESL_UPDATA_REQUEST:
             update_fnx(msg->buf, msg->len);
             break;
+        case CORE_CMD_ESL_HB_REQUEST:
+            hb_func(msg->buf, msg->len);
+            break;
+        case CORE_CMD_SCAN_BG:
+            scan_bg(msg->buf, msg->len);
         default:
             break;
     }
 }
 
-static void update_fnx(uint8_t* buf, uint8_t len)
+static void update_func(uint8_t* buf, uint8_t len)
 {
     if (parse_cmd_data(buf, len) < 0){
         //todo: error
@@ -70,6 +75,16 @@ static void update_fnx(uint8_t* buf, uint8_t len)
             rf_cmd_head[i] = NULL;
         }
     }
+}
+
+static void hb_func(uint8_t* buf, uint8_t len)
+{
+
+}
+
+static void scan_bg(uint8_t* buf, uint8_t len)
+{
+
 }
 
 

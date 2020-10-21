@@ -48,7 +48,7 @@ done:
 
 static int8_t sleep_mode0(void* addr)
 {
-    sleep_st* sleep =  (sleep_st*)addr
+    sleep_st* sleep =  (sleep_st*)addr;
     int8_t ret = 0;
     int32_t i, j;
     basic_data_st *cur = sleep->data;
@@ -99,7 +99,7 @@ static int8_t sleep_mode0(void* addr)
 
 int8_t make_sleep_data(uint8_t *eslid, uint8_t x, uint8_t *pdata, uint8_t len)
 {
-    UINT16 crc = 0;
+    uint16_t crc = 0;
 
     if(len < 3)
     {
