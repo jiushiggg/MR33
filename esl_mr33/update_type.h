@@ -125,12 +125,12 @@ typedef struct _sleep_st{
     uint8_t power;
     uint8_t mode;
     uint8_t interval;
-    uint8_t ctrl_bit;
+    uint8_t idx;
     uint8_t times;
     uint8_t default_len;
     uint8_t reserved[7];
     uint16_t num;
-    basic_data_st data[0];
+    uint8_t data[0];
 }sleep_st;
 
 

@@ -11,32 +11,32 @@
 
 #include "cc2640r2_rf.h"
 #include "timer.h"
+#include "crc16.h"
 
+#define CTRL_SLEEP          (uint8_t)(7 << 5)
 
-static int8_t sleep_mode0(sleep_st* addr);
+static int8_t sleep_mode0(void* addr);
+uint16_t cal_crc16(uint8_t ctrl, const uint8_t *eslid, const uint8_t *pdata, uint8_t len);
+int8_t make_sleep_data(uint8_t *eslid, uint8_t x, uint8_t *pdata, uint8_t len);
 
 int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
 {
     int8_t ret = 0;
     sleep_st* sleep =  (sleep_st*)addr[n];
-    basic_data_st *basic_data = (basic_data_st *)sleep->data;
 
     pdebug("sleep:rate=%d,power=%d,mode=%d,interval=%d\n", sleep->rate, sleep->power, sleep->mode, sleep->interval);
     pdebug("idx=%d,times=%d,num=%d,default_len=%d\n", sleep->idx, sleep->times, sleep->num, sleep->default_len);
 
-    if(sleep->num == 0)
-    {
+    if(sleep->num == 0) {
         goto done;
     }
 
     set_power_rate(sleep->power, sleep->rate);
 
-    switch(sleep->mode)
-    {
+    switch(sleep->mode) {
         case 0: // 0 is default
         default:
-            if(sleep_mode0(sleep) < 0)
-            {
+            if(sleep_mode0(sleep) < 0) {
                 ret = -2;
             }
         break;
@@ -50,47 +50,45 @@ static int8_t sleep_mode0(void* addr)
 {
     sleep_st* sleep =  (sleep_st*)addr;
     int8_t ret = 0;
-    int32_t i, j;
-    basic_data_st *cur = sleep->data;
+    int16_t i, j;
+    basic_data_st *cur = (basic_data_st*)sleep->data;
     uint8_t sleep_data_len  = 0;
+    uint8_t sleep_times = 1;
 
-    int32_t read_len = 0;
-    volatile INT8 prev_channel=RF_FREQUENCY_UNKNOW;
-    sleep_times = 1;
+    volatile uint8_t prev_channel=0;
 
-
-    for(j = 0; j < sleep_times; j++)
-    {
-        if(Core_GetQuitStatus() == 1)
-        {
+    for(j = 0; j < sleep_times; j++) {
+        if(Core_GetQuitStatus() == 1) {
             pdebug("sleep_mode0 quit2\r\n");
             break;
         }
 
         ret = 0;
 
-        for( i = 0; (i<sleep->num  &&  cur<(sleep+sizeof(data_head_st)+sleep_len); i++)
-        {
-            if(Core_GetQuitStatus() == 1)
-            {
+        for( i = 0; i < sleep->num; i++) {
+            if(Core_GetQuitStatus() == 1){
                 pdebug("sleep_mode0 quit1\r\n");
                 break;
             }
 
-            set_frequence(cur->channel);
-            if(sleep_data_len == 0)
-            {
+            if(0 == cur->len) {
+                sleep->default_len = 0==sleep->default_len ? 26 : sleep->default_len;
                 sleep_data_len = sleep->default_len;
-                make_sleep_data(sleep_id, sleep_idx, sleep_data, sleep_data_len);
+                make_sleep_data(cur->id, sleep->idx, cur->data, sleep_data_len);
+            }else {
+                sleep_data_len = cur->len;
             }
-            prev_channel = sleep_channel;
-            send_data(sleep_id, sleep_data, sleep_data_len, 1000);
+            if (cur->channel != prev_channel){
+                set_frequence(cur->channel);
+            }
+            prev_channel = cur->channel;
+            send_data(cur->id, cur->data, sleep_data_len, 1000);
 
             pdebug("sleep %02X-%02X-%02X-%02X, channel=%d, datalen=%d: ", \
-                    sleep_id[0], sleep_id[1], sleep_id[2], sleep_id[3], sleep_channel, sleep_data_len);
+                   cur->id[0], cur->id[1], cur->id[2], cur->id[3], cur->channel, sleep_data_len);
             pdebughex(sleep->data, sleep_data_len);
 
-            cur += read_len;
+            cur = (basic_data_st *)((uint8_t*)cur + offsetof(basic_data_st, data) + cur->len);
         }
     }
 
@@ -101,8 +99,7 @@ int8_t make_sleep_data(uint8_t *eslid, uint8_t x, uint8_t *pdata, uint8_t len)
 {
     uint16_t crc = 0;
 
-    if(len < 3)
-    {
+    if(len < 3) {
         return -1;
     }
 
@@ -113,6 +110,17 @@ int8_t make_sleep_data(uint8_t *eslid, uint8_t x, uint8_t *pdata, uint8_t len)
     pdata[len-1] = crc / 256;
 
     return (int8_t)len;
+}
+
+uint16_t cal_crc16(uint8_t ctrl, const uint8_t *eslid, const uint8_t *pdata, uint8_t len)
+{
+    uint16_t crc = 0;
+
+    crc = CRC16_CaculateStepByStep(crc, &ctrl, sizeof(ctrl));
+    crc = CRC16_CaculateStepByStep(crc, pdata, len);
+    crc = CRC16_CaculateStepByStep(crc, eslid, 4);
+
+    return crc;
 }
 
 

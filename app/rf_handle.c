@@ -14,7 +14,6 @@
 #include "task_id.h"
 #include "update_type.h"
 #include "debug.h"
-#include "update_mr33.h"
 
 
 typedef  int8_t (*cmd_start_func)(uint8_t** addr, uint8_t n, rf_parse_st* info);
@@ -36,6 +35,9 @@ uint8_t* rf_cmd_head[HANDLE_MAX_NUM];        //todo: malloc rf_cmd_head
 static void update_func(uint8_t* buf, uint8_t len);
 static void debug_local_cmd(uint8_t **tmp, rf_parse_st* info);
 static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len);
+static void hb_func(uint8_t* buf, uint8_t len);
+static void scan_bg_func(uint8_t* buf, uint8_t len);
+
 volatile uint8_t core_idel_flag = 0;
 
 
@@ -51,13 +53,13 @@ void rf_handle(rf_tsk_msg_t* msg)
 
     switch(msg->id){
         case CORE_CMD_ESL_UPDATA_REQUEST:
-            update_fnx(msg->buf, msg->len);
+            update_func(msg->buf, msg->len);
             break;
         case CORE_CMD_ESL_HB_REQUEST:
             hb_func(msg->buf, msg->len);
             break;
         case CORE_CMD_SCAN_BG:
-            scan_bg(msg->buf, msg->len);
+            scan_bg_func(msg->buf, msg->len);
         default:
             break;
     }
@@ -82,7 +84,7 @@ static void hb_func(uint8_t* buf, uint8_t len)
 
 }
 
-static void scan_bg(uint8_t* buf, uint8_t len)
+static void scan_bg_func(uint8_t* buf, uint8_t len)
 {
 
 }
