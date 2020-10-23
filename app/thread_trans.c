@@ -36,15 +36,6 @@
 #define THREAD_SPI_PEND_TIME (30000*1000/Clock_tickPeriod)
 
 
-typedef struct trans_struct {
-    List_Elem elem;
-    uint8_t * buf;
-    trans_buf_status buf_status;
-    uint8_t buf_total;
-    uint8_t buf_index;
-} trans_struct;
-
-
 static void thread_transmit_init(void);
 static void trans_downlink_handle(uart_tsk_msg_t* msg);
 static void trans_uplink_handle(uart_tsk_msg_t* msg);

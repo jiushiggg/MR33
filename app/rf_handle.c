@@ -16,14 +16,14 @@
 #include "debug.h"
 
 
-typedef  int8_t (*cmd_start_func)(uint8_t** addr, uint8_t n, rf_parse_st* info);
+typedef  int8_t (*cmd_start_func)(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
 
-extern int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
-extern int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
-extern int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
-extern int8_t updata_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
-extern int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
-extern int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
+extern int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
+extern int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
+extern int8_t updata_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
+extern int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
+extern int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
 
 cmd_start_func cmd_start[HANDLE_MAX_NUM] = {set_wk_handle, group_wk_handle, frame1_handle, \
                                             sleep_handle, updata_handle, query_handle};
@@ -32,7 +32,7 @@ cmd_start_func cmd_start[HANDLE_MAX_NUM] = {set_wk_handle, group_wk_handle, fram
 uint8_t* rf_cmd_head[HANDLE_MAX_NUM];        //todo: malloc rf_cmd_head
 
 
-static void update_func(uint8_t* buf, uint8_t len);
+static void update_func(uint8_t* buf, uint8_t len, void * extra);
 static void debug_local_cmd(uint8_t **tmp, rf_parse_st* info);
 static int8_t parse_cmd_data(uint8_t* addr, uint32_t left_len);
 static void hb_func(uint8_t* buf, uint8_t len);
@@ -53,7 +53,7 @@ void rf_handle(rf_tsk_msg_t* msg)
 
     switch(msg->id){
         case CORE_CMD_ESL_UPDATA_REQUEST:
-            update_func(msg->buf, msg->len);
+            update_func(msg->buf, msg->len, msg->extra);
             break;
         case CORE_CMD_ESL_HB_REQUEST:
             hb_func(msg->buf, msg->len);
@@ -65,7 +65,7 @@ void rf_handle(rf_tsk_msg_t* msg)
     }
 }
 
-static void update_func(uint8_t* buf, uint8_t len)
+static void update_func(uint8_t* buf, uint8_t len, void *extra)
 {
     if (parse_cmd_data(buf, len) < 0){
         //todo: error
@@ -73,7 +73,7 @@ static void update_func(uint8_t* buf, uint8_t len)
 
     for (uint8_t i=0; i<HANDLE_MAX_NUM; i++){
         if (NULL != rf_cmd_head[i]){
-            cmd_start[i](rf_cmd_head, i, &data_info);
+            cmd_start[i](rf_cmd_head, i, &data_info, extra);
             rf_cmd_head[i] = NULL;
         }
     }

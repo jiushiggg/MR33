@@ -14,7 +14,7 @@
 #include "timer.h"
 
 
-int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
+int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     return 0;
 }

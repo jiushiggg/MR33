@@ -721,3 +721,35 @@ static void RF_MapIO(void)
     IOCIOPortIdSet(RF_RX_TEST_IO,      IOC_PORT_RFC_GPO0);
 }
 
+static rfc_dataEntryPointer_t txEntry[2];
+static dataQueue_t txQueue;
+
+
+void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size2)
+{
+    /* Configure TX Entry */
+    txEntry[0].pNextEntry = (uint8_t*)&txEntry[1];
+    txEntry[0].status = DATA_ENTRY_PENDING;
+    txEntry[0].config.type = DATA_ENTRY_TYPE_PTR;
+    txEntry[0].pData = buff1;
+    txEntry[0].length = size1;
+
+    txEntry[1].pNextEntry = (uint8_t*)&txEntry[0];
+    txEntry[1].status = DATA_ENTRY_PENDING;
+    txEntry[1].config.type = DATA_ENTRY_TYPE_PTR;
+    txEntry[1].pData = buff2;
+    txEntry[1].length = size2;
+
+    txQueue.pCurrEntry = (uint8_t*)txEntry;
+    txQueue.pLastEntry = NULL;
+
+    /* Configure CMD_PROP_TX_ADV */
+    RF_cmdPropTxAdv[0].pPkt = (uint8_t*)&txQueue;
+    RF_cmdPropTxAdv[0].pktLen = 0;
+    RF_cmdPropTxAdv[0].startTrigger.triggerType = TRIG_NOW;
+    RF_cmdPropTxAdv[0].startTrigger.pastTrig = 1;
+    RF_cmdPropTxAdv[0].startTime = 0;
+    RF_cmdPropTxAdv[0].pNextOp = NULL;
+}
+
+

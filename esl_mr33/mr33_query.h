@@ -8,7 +8,7 @@
 #ifndef ESL_MR33_QUERY_H_
 #define ESL_MR33_QUERY_H_
 
-extern int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t query_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
 
 
 

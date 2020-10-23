@@ -17,7 +17,7 @@ static uint8_t frame2(void* addr, uint8_t num, int32_t duration);
 static uint8_t frame1_mode0(void* addr, uint8_t num, int32_t duration);
 
 
-int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
+int8_t frame1_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     int8_t ret = 0;
     int32_t dur = 0;

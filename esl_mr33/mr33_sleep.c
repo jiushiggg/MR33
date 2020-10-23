@@ -19,7 +19,7 @@ static int8_t sleep_mode0(void* addr);
 uint16_t cal_crc16(uint8_t ctrl, const uint8_t *eslid, const uint8_t *pdata, uint8_t len);
 int8_t make_sleep_data(uint8_t *eslid, uint8_t x, uint8_t *pdata, uint8_t len);
 
-int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
+int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     int8_t ret = 0;
     sleep_st* sleep =  (sleep_st*)addr[n];

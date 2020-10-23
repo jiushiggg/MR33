@@ -9,6 +9,7 @@
 #define ESL_MR33_UPDATE_TYPE_H_
 #include <stdint.h>
 
+#define ESL_PREAMABLE_LEN 4
 #define ESL_ID_LEN  4
 #define ESL_DATA_LEN    26
 
@@ -37,6 +38,7 @@ typedef struct _basic_data_st{
 }basic_data_st;
 
 typedef struct _mr33_data_st{
+    uint8_t preamable[ESL_PREAMABLE_LEN];
     uint8_t id[ESL_ID_LEN];
     uint8_t channel;
     uint8_t len;

@@ -45,12 +45,6 @@ typedef  struct _uart_tsk_msg_t{
     void* extra;
 }uart_tsk_msg_t;
 
-typedef enum _trans_buf_status{
-    TRANS_BUF_USING   =   0,
-    TRANS_BUF_IDLE,
-}trans_buf_status;
-
-
 
 
 typedef enum _uart_head_ctrl{

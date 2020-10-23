@@ -9,7 +9,7 @@
 #define ESL_MR33_SLEEP_H_
 
 
-extern int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info);
+extern int8_t sleep_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra);
 
 
 #endif /* ESL_MR33_MR33_SLEEP_H_ */

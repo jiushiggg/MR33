@@ -17,7 +17,7 @@ static int8_t set_wakeup_led_flash(void* addr, void* f1_addr);
 static int8_t wakeup_start(void* addr, uint8_t type);
 
 
-int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
+int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     int8_t ret = 0;
     set_wkup_st* set = (set_wkup_st*)addr[n];
@@ -46,7 +46,7 @@ int8_t set_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
     return ret;
 }
 
-int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info)
+int8_t group_wk_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     wkup_st *group = (wkup_st*)addr[n];
     pinfo("sw1 bg\r\n");
