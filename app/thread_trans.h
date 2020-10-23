@@ -17,7 +17,7 @@ typedef enum _trans_buf_status{
 typedef struct _trans_struct {
     List_Elem elem;
     uint16_t buf_total;
-    uint16_t buf_len;
+    uint16_t data_len;
     uint8_t * buf;
     trans_buf_status buf_status;
     uint8_t buf_index;

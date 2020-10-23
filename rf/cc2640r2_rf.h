@@ -136,5 +136,5 @@ extern void RF_senseTestFunction(void);
 extern uint8_t convertRSSI(int8_t n);
 
 extern void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size2);
-
+extern uint16_t rf_infinite_post_send(void);
 #endif

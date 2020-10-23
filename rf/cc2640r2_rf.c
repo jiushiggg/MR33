@@ -751,5 +751,10 @@ void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size
     RF_cmdPropTxAdv[0].startTime = 0;
     RF_cmdPropTxAdv[0].pNextOp = NULL;
 }
-
+uint16_t rf_infinite_post_send(void)
+{
+    RF_CmdHandle handle = RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTxAdv[0],
+        RF_PriorityNormal, NULL, RF_EventTxEntryDone);
+    return (uint16_t)handle;
+}
 

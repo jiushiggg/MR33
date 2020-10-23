@@ -3,9 +3,12 @@
 
 #include "thread_rf.h"
 #include "thread_trans.h"
+#include "trans_struct.h"
 #include "debug.h"
 #include "task_id.h"
 
+
+static void trans_free_ram_buf(uint16_t id, uint8_t* data, uint32_t length, uint32_t size, uint32_t extra);
 
 int8_t downlink_data_handler(uint16_t id, uint8_t* data, uint32_t length,
     uint32_t size, uint32_t storage)
@@ -55,8 +58,19 @@ int8_t downlink_data_handler(uint16_t id, uint8_t* data, uint32_t length,
         break;
     case CORE_CMD_CALIBRATE_FREQ:
         break;
+    case CORE_CMD_FREE_RAM_BUF:
+        trans_free_ram_buf(id, data, length, size, storage);
+        break;
     default:
         break;
     }
     return 0;
+}
+
+static void trans_free_ram_buf(uint16_t id, uint8_t* data, uint32_t length, uint32_t size, uint32_t extra)
+{
+    ((trans_struct*)extra)->buf_status = TRANS_BUF_IDLE;
+    ((trans_struct*)extra)->data_len = 0;
+
+    uart_data_send(MSG_UPLINK_REQ, id, data, length, NULL);
 }

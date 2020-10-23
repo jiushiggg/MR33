@@ -13,6 +13,8 @@
 #include "thread_rf.h"
 #include "task_id.h"
 #include "update_type.h"
+#include "thread_trans.h"
+#include "trans_struct.h"
 #include "debug.h"
 
 
@@ -54,6 +56,7 @@ void rf_handle(rf_tsk_msg_t* msg)
     switch(msg->id){
         case CORE_CMD_ESL_UPDATA_REQUEST:
             update_func(msg->buf, msg->len, msg->extra);
+            uart_data_send(MSG_EVENT, CORE_CMD_FREE_RAM_BUF, NULL, 0, msg->extra);
             break;
         case CORE_CMD_ESL_HB_REQUEST:
             hb_func(msg->buf, msg->len);

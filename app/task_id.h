@@ -30,6 +30,7 @@
 #define CORE_CMD_RF_TXRX                0x10A3
 #define CORE_CMD_CALIBRATE_POWER        0x10A4
 #define CORE_CMD_CALIBRATE_FREQ         0x10A5
+#define CORE_CMD_FREE_RAM_BUF           0x10A6
 
 #define CORE_CMD_SCAN_WKUP              0x10B1
 
