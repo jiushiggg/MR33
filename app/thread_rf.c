@@ -20,8 +20,7 @@
 #include "thread_rf.h"
 #include "debug.h"
 #include "trans_struct.h"
-
-
+#include "rf_handle.h"
 
 
 Mailbox_Handle rf_mbox;

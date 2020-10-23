@@ -8,6 +8,8 @@
 #ifndef APP_RF_HANDLE_H_
 #define APP_RF_HANDLE_H_
 
+#include "thread_rf.h"
+
 typedef enum{
     PARSE_START,
     PARSE_DOING,
@@ -32,6 +34,7 @@ enum{
     HANDLE_MAX_NUM
 }em_cmd;
 
+extern void rf_handle(rf_tsk_msg_t* msg);
 extern uint8_t Core_GetQuitStatus(void);
 
 #endif /* APP_RF_HANDLE_H_ */
