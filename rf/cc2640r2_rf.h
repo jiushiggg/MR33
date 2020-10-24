@@ -92,6 +92,8 @@ extern int32_t frequency_offset;
 extern int8_t power_offset;
 extern uint16_t rf_tx_power[POWER_LEVEL];
 
+
+
 extern void rf_init(void);
 
 extern void set_rf_parameters(uint16_t Data_rate, uint16_t Tx_power, uint16_t  Frequency);
@@ -135,6 +137,9 @@ extern void send_chaningmode_init(void);
 extern void RF_senseTestFunction(void);
 extern uint8_t convertRSSI(int8_t n);
 
+
 extern void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size2);
 extern uint16_t rf_infinite_post_send(void);
+extern void rf_queue_put(uint8_t* buff1, uint16_t size1);
+extern void rf_queue_clear(void);
 #endif

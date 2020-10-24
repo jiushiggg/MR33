@@ -723,7 +723,20 @@ static void RF_MapIO(void)
 
 static rfc_dataEntryPointer_t txEntry[2];
 static dataQueue_t txQueue;
+volatile uint8_t* curr_entry;
 
+
+void infinite_post_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
+{
+    if (e & RF_EventTxEntryDone) {
+           curr_entry = txQueue.pCurrEntry;
+    }
+    else if (e & RF_EventLastCmdDone) {
+
+    }else {
+
+    }
+}
 
 void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size2)
 {
@@ -742,7 +755,6 @@ void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size
 
     txQueue.pCurrEntry = (uint8_t*)txEntry;
     txQueue.pLastEntry = NULL;
-
     /* Configure CMD_PROP_TX_ADV */
     RF_cmdPropTxAdv[0].pPkt = (uint8_t*)&txQueue;
     RF_cmdPropTxAdv[0].pktLen = 0;
@@ -751,10 +763,32 @@ void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16_t size
     RF_cmdPropTxAdv[0].startTime = 0;
     RF_cmdPropTxAdv[0].pNextOp = NULL;
 }
+
+void rf_queue_put(uint8_t* buff1, uint16_t size1)
+{
+    rfc_dataEntryPointer_t *p = (rfc_dataEntryPointer_t*)curr_entry;
+    p->pData = buff1;
+    p->length = size1;
+}
+
+void rf_queue_clear(void)
+{
+    curr_entry = NULL;
+}
+
 uint16_t rf_infinite_post_send(void)
 {
     RF_CmdHandle handle = RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTxAdv[0],
-        RF_PriorityNormal, NULL, RF_EventTxEntryDone);
+        RF_PriorityNormal, &infinite_post_callback, RF_EventTxEntryDone);
     return (uint16_t)handle;
 }
 
+uint64_t rf_wait_send_done(uint16_t handle)
+{
+    return RF_pendCmd(rfHandle, handle, RF_EventTxEntryDone);
+}
+
+void rf_infinite_send_stop(void)
+{
+    txQueue.pLastEntry = curr_entry;
+}

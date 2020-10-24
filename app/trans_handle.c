@@ -20,7 +20,7 @@ int8_t downlink_data_handler(uint16_t id, uint8_t* data, uint32_t length,
     uint8_t temp[16];
     switch(id){
     case CORE_CMD_ESL_UPDATA_REQUEST:
-        //forward_msg_rfthread(id, temp, length, size, storage);
+        forward_msg_rfthread(id, temp, length, size, storage);
         break;
     case CORE_CMD_ESL_HB_REQUEST:
         forward_msg_rfthread(id, temp, length, size, storage);
