@@ -142,4 +142,6 @@ extern void rf_queue_init(uint8_t* buff1, uint16_t size1, uint8_t* buff2, uint16
 extern uint16_t rf_infinite_post_send(void);
 extern void rf_queue_put(uint8_t* buff1, uint16_t size1);
 extern void rf_queue_clear(void);
+extern uint64_t rf_wait_send_done(uint16_t handle);
+extern void rf_infinite_send_stop(void);
 #endif

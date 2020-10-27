@@ -790,5 +790,5 @@ uint64_t rf_wait_send_done(uint16_t handle)
 
 void rf_infinite_send_stop(void)
 {
-    txQueue.pLastEntry = curr_entry;
+    txQueue.pLastEntry = (uint8_t*)curr_entry;
 }

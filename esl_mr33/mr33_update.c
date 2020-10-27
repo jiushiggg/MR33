@@ -36,13 +36,11 @@ List_Elem * trans_buf_list = NULL;
 
 
 
-
+//  todo: add timer
 int8_t updata_handle(uint8_t** addr, uint8_t n, rf_parse_st* info, void * extra)
 {
     group_data_st* data_addr =  (group_data_st*)addr;
-    mr33_data_st *basic_data = (mr33_data_st *)data_addr->data;
-    uint8_t timer = 0;
-    uint16_t timeout = 0;
+//    mr33_data_st *basic_data = (mr33_data_st *)data_addr->data;
     trans_buf_list = (List_Elem *)extra;
 
     switch(updata_status){

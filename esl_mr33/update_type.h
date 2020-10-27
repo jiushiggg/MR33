@@ -152,7 +152,7 @@ typedef struct _frame1_st{
 typedef struct _query_st{
     uint16_t cmd;
     uint32_t len;
-    uint8_t recv_id_id[4];
+    uint8_t recv_id[4];
     uint8_t power;
     uint16_t tx_rate;
     uint16_t rx_rate;
@@ -165,7 +165,7 @@ typedef struct _query_st{
     uint8_t channel;
     uint8_t reserved[4];
     uint16_t num;
-    uint8_t data[0][ESL_DATA_LEN];
+    basic_data_st esl[0];
 }query_st;
 
 
