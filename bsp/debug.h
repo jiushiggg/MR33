@@ -31,6 +31,6 @@ void debug_peripheral_init(void);
 void log_print(const char *fmt, ...);
 void pinfoEsl(const char *format, ...);
 
-#define TRACE()   pinfo("trace: %s", __FUNCTION__)
-
+#define TRACE()   pinfo("trace: %s\n", __FUNCTION__)
+#define TRACE_DEBUG()   pdebug("trace: %s\n", __FUNCTION__)
 #endif

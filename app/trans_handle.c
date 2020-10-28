@@ -5,6 +5,7 @@
 #include "thread_trans.h"
 #include "trans_struct.h"
 #include "debug.h"
+#include "bsp.h"
 #include "task_id.h"
 
 
@@ -28,7 +29,7 @@ int8_t downlink_data_handler(uint16_t id, uint8_t* data, uint32_t length,
     case CORE_CMD_RCREQ_REQUEST:
         break;
     case CORE_CMD_SOFT_REBOOT:
-        //uart_data_send(id, data, length);
+        exceptionHandler();
         break;
     case CORE_CMD_FT_RR_TXNULL:
         forward_msg_rfthread(id, temp, length, size, storage);
@@ -40,7 +41,7 @@ int8_t downlink_data_handler(uint16_t id, uint8_t* data, uint32_t length,
         //uart_data_send(id, data, length);
         break;
     case CORE_CMD_SET_DEBUG_LEVEL:
-        //uart_data_send(id, data, length);
+        Debug_SetLevel(data[0]);
         break;
     case CORE_CMD_SET_RF_LOG:
         //uart_data_send(id, data, length);

@@ -112,7 +112,7 @@ void app_init(void)
     VIMSModeSet(VIMS_BASE, VIMS_MODE_ENABLED);
 #endif //CACHE_AS_RAM
 
-    Debug_SetLevel(DEBUG_LEVEL_INFO);
+    Debug_SetLevel(DEBUG_LEVEL_DEBUG);
     debug_peripheral_init();
     ap_heap_init();
     //Event_init();

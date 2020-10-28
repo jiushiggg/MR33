@@ -124,6 +124,7 @@ void *thread_transmit(UArg arg)
 {
     uart_tsk_msg_t msg;
     TRACE();
+    pinfo("trace: %s\n", __FUNCTION__)
     thread_transmit_init();
     bsp_uart_init();
     semaphore_uart_init();
@@ -215,7 +216,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
 
 
     while(exit_flg){
-        pinfo("downlink_handle = %d", d_status);
+        pinfo("downlink_handle = %d\n", d_status);
         switch(d_status){
             case DOWNLINK_START:
                 task_id = msg_head->idx;
@@ -318,6 +319,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
                     d_status = DOWNLINK_END;
                 }else {
                     d_status = DOWNLINK_JUDGE;
+                    exit_flg = 0;
                 }
                 break;
             }
@@ -336,6 +338,7 @@ void trans_downlink_handle(uart_tsk_msg_t* msg)
 //todo: check bitmap
                 uart_data_send(MSG_EVENT, task_id, temp_list->buf, len, temp_list);
                 task_id = 0;
+                exit_flg = 0;
                 d_status = DOWNLINK_START;
                 break;
             }
